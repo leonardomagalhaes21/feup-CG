@@ -1,10 +1,10 @@
 # CG 2024/2025
 
-## Group T0xG0y
+## Group T12G09
 | Name             | Number    | E-Mail             |
 | ---------------- | --------- | ------------------ |
-| John Doe         | 201901010 | ...                |
-| Jane Doe         | 201901011 | ...                |
+| Leonardo Teixeira | 202208726 | up202208726@up.pt |
+| Tiago Pinto | 202206280 | up202206280@up.pt |
 
 ----
 
