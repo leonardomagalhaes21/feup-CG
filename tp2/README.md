@@ -14,3 +14,9 @@ TP2-2: Desenvolvimento do Cubo Unitário
 
 TP2-3: Implementação do Cubo com Quadrados
 - Criação do MyUnitCubeQuad utilizando seis instâncias de MyQuad para formar as faces do cubo. Esta abordagem modular facilita a aplicação de transformações ou texturas individuais para cada face, mantendo o mesmo resultado visual que a implementação anterior.
+
+
+![Screenshot 1](screenshots/cg-t12g09-tp2-1.png)
+![Screenshot 2](screenshots/cg-t12g09-tp2-2.png)
+![Screenshot 3](screenshots/cg-t12g09-tp2-3.png)
+
