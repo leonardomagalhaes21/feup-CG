@@ -29,6 +29,9 @@ export class MyInterface extends CGFinterface {
         // Adicionar checkbox para o Tangram
         this.gui.add(this.scene, 'displayTangram').name('Display Tangram');
 
+        // Adicionar checkbox para o Cube
+        this.gui.add(this.scene, 'displayCube').name('Display Cube');
+
 
         //Dropdown for textures
         this.gui.add(this.scene, 'selectedTexture', this.scene.textureIds).name('Selected Texture').onChange(this.scene.updateAppliedTexture.bind(this.scene));

@@ -1,6 +1,7 @@
 import { CGFscene, CGFcamera, CGFaxis, CGFappearance, CGFtexture } from "../lib/CGF.js";
 import { MyQuad } from "./MyQuad.js";
 import { MyTrangram } from "./MyTrangram.js";
+import { MyUnitCubeQuad } from "./MyUnitCubeQuad.js";
 
 
 /**
@@ -26,10 +27,15 @@ export class MyScene extends CGFscene {
         this.gl.depthFunc(this.gl.LEQUAL);
         this.enableTextures(true);
 
+        this.textureTop = new CGFtexture(this, 'images/mineTop.png');
+        this.textureSide = new CGFtexture(this, 'images/mineSide.png');
+        this.textureBottom = new CGFtexture(this, 'images/mineBottom.png');
+
         //Initialize scene objects
         this.axis = new CGFaxis(this);
         this.quad = new MyQuad(this);
         this.tangram = new MyTrangram(this);
+        this.cube = new MyUnitCubeQuad(this, this.textureTop, this.textureSide, this.textureSide, this.textureSide, this.textureSide, this.textureBottom);
 
 
         //------ Applied Material
@@ -61,6 +67,7 @@ export class MyScene extends CGFscene {
         this.displayAxis = true;
         this.displayQuad = true; 
         this.displayTangram = false;
+        this.displayCube = false;
         this.scaleFactor = 5;
         this.selectedTexture = -1;        
         this.wrapS = 0;
@@ -147,6 +154,11 @@ export class MyScene extends CGFscene {
         if (this.displayTangram) {
             this.tangramMaterial.apply();
             this.tangram.display();
+        }
+        
+        if (this.displayCube) {
+            this.quadMaterial.apply(); //just for lighting
+            this.cube.display();
         }
 
         // ---- END Primitive drawing section
