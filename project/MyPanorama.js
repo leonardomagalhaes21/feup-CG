@@ -15,9 +15,8 @@ export class MyPanorama extends CGFobject {
     
     // Create an inverted sphere with a high number of divisions for smooth appearance
     // Parameters: scene, slices, stacks, radius=1, inside=true
-    this.sphere = new MySphere(this.scene, 50, 200, 1, true);
+    this.sphere = new MySphere(this.scene, 50, 25, 1, true);
     
-    // Create material with only emissive component for full brightness
     this.material = new CGFappearance(this.scene);
     this.material.setAmbient(0, 0, 0, 1);
     this.material.setDiffuse(0, 0, 0, 1);
@@ -43,13 +42,10 @@ export class MyPanorama extends CGFobject {
       );
     }
     
-    // Scale the sphere to the required radius (200 units)
     this.scene.scale(200, 200, 200);
     
-    // Apply the material with emissive component and panoramic texture
     this.material.apply();
     
-    // Display the inverted sphere
     this.sphere.display();
     
     this.scene.popMatrix();
