@@ -33,7 +33,6 @@ export class MyPanorama extends CGFobject {
   display() {
     this.scene.pushMatrix();
     
-    // Center the panorama at the camera's position
     if (this.scene.camera && this.scene.camera.position) {
       this.scene.translate(
         this.scene.camera.position[0],

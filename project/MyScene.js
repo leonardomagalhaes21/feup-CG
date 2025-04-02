@@ -2,6 +2,9 @@ import { CGFscene, CGFcamera, CGFaxis, CGFtexture, CGFappearance} from "../lib/C
 import { MyPlane } from "./MyPlane.js";
 import { MySphere } from "./MySphere.js";
 import { MyPanorama } from "./MyPanorama.js";
+import { MyBuilding } from "./MyBuilding.js";
+
+
 
 /**
  * MyScene
@@ -50,6 +53,18 @@ export class MyScene extends CGFscene {
     // Carregar a textura do panorama e criar o objeto MyPanorama
     this.panoramaTexture = new CGFtexture(this, 'textures/panorama.jpg');
     this.panorama = new MyPanorama(this, this.panoramaTexture);
+
+
+
+    this.windowTexture = new CGFtexture(this, 'textures/window.jpg');
+    this.fireStation = new MyBuilding(
+      this,
+      40,
+      3,
+      3,
+      this.windowTexture,
+      [0.9, 0.2, 0.2]
+    );
       
 
   }
@@ -64,8 +79,8 @@ export class MyScene extends CGFscene {
       0.8,
       0.1,
       1000,
-      vec3.fromValues(50, 0, 50),
-      vec3.fromValues(0, 0, 0)
+      vec3.fromValues(-100, 20, -100), 
+      vec3.fromValues(-150, 10, -150)  
     );
   }
   checkKeys() {
@@ -98,7 +113,7 @@ export class MyScene extends CGFscene {
     this.setShininess(10.0);
   }
   display() {
-    // ---- BEGIN Background, camera and axis setup
+
     // Clear image and depth buffer everytime we update the scene
     this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
@@ -114,15 +129,15 @@ export class MyScene extends CGFscene {
     this.setDefaultAppearance();
     this.panorama.display();
 
-    this.earthMaterial.apply();
+    
+  
+    
     this.pushMatrix();
-
+    this.translate(-150, 0, -150);
     
-    this.scale(10, 10, 10); 
     
-    //this.earthSphere.display();
+    this.fireStation.display();
     this.popMatrix();
-
     
   }
 }
