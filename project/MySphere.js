@@ -7,13 +7,15 @@ import { CGFobject } from "../lib/CGF.js";
  * @param {Integer} slices - Number of divisions around Y axis
  * @param {Integer} stacks - Number of layers in each hemisphere (from equator to pole)
  * @param {Number} radius - Sphere radius (default: 1)
+ * @param {Boolean} inside - Whether to see the sphere from inside (default: false)
  */
 export class MySphere extends CGFobject {
-  constructor(scene, slices, stacks, radius = 1) {
+  constructor(scene, slices, stacks, radius = 1, inside = false) {
     super(scene);
     this.slices = slices;
     this.stacks = stacks;
     this.radius = radius;
+    this.inside = inside;
     
     this.initBuffers();
   }
@@ -31,20 +33,16 @@ export class MySphere extends CGFobject {
     const alphaInc = Math.PI / (2 * this.stacks);
     const betaInc = (2 * Math.PI) / this.slices;
     
-    // Total number of vertices per parallel (latitude circle)
     const verticesPerParallel = this.slices + 1;
     
-    // Generate vertices for both hemispheres (north and south)
     // Starting from the south pole (-90°) to the north pole (+90°)
     for (let stackIdx = 0; stackIdx <= 2 * this.stacks; stackIdx++) {
       const alpha = -Math.PI/2 + stackIdx * alphaInc;
       const sinAlpha = Math.sin(alpha);
       const cosAlpha = Math.cos(alpha);
       
-      // Y coordinate is determined by the sine of alpha
       const y = this.radius * sinAlpha;
       
-      // Radius of the parallel (latitude circle) at this height
       const parallelRadius = this.radius * cosAlpha;
       
       for (let sliceIdx = 0; sliceIdx <= this.slices; sliceIdx++) {
@@ -58,11 +56,12 @@ export class MySphere extends CGFobject {
         
         this.vertices.push(x, y, z);
         
-        // Calculate normal (points from center to surface)
+        // Calculate normal (points from center to surface or vice versa if inside)
         const length = Math.sqrt(x*x + y*y + z*z);
-        this.normals.push(x/length, y/length, z/length);
+        const normalDirection = this.inside ? -1 : 1;
+        this.normals.push(normalDirection * x/length, normalDirection * y/length, normalDirection * z/length);
         
-        // Calculate texture coordinates - (inverted)
+        // Calculate texture coordinates (inverted)
         // s: longitude (0 to 1 around the sphere)
         // t: latitude (0 at north pole, 0.5 at equator, 1 at south pole)
         const s = 1 - (sliceIdx / this.slices);
@@ -80,8 +79,14 @@ export class MySphere extends CGFobject {
         const bottomRight = bottomLeft + 1;
         
         // Create two triangles for each quad section
-        this.indices.push(topLeft, bottomLeft, topRight);
-        this.indices.push(bottomLeft, bottomRight, topRight);
+        // If inside is true, invert the winding order to see from inside
+        if (this.inside) {
+          this.indices.push(topRight, bottomLeft, topLeft);
+          this.indices.push(topRight, bottomRight, bottomLeft);
+        } else {
+          this.indices.push(topLeft, bottomLeft, topRight);
+          this.indices.push(bottomLeft, bottomRight, topRight);
+        }
       }
     }
 

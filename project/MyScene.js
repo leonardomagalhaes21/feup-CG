@@ -1,6 +1,7 @@
 import { CGFscene, CGFcamera, CGFaxis, CGFtexture, CGFappearance} from "../lib/CGF.js";
 import { MyPlane } from "./MyPlane.js";
 import { MySphere } from "./MySphere.js";
+import { MyPanorama } from "./MyPanorama.js";
 
 /**
  * MyScene
@@ -33,9 +34,8 @@ export class MyScene extends CGFscene {
     this.axis = new CGFaxis(this, 20, 1);
     this.plane = new MyPlane(this, 64);
 
-    this.earthSphere = new MySphere(this, 32, 16); // Mais divisões para maior qualidade
+    this.earthSphere = new MySphere(this, 32, 16); 
 
-    // Carregar a textura da Terra
     this.earthTexture = new CGFtexture(this, 'textures/earth.jpg');
     
     // Configurar o material para a Terra
@@ -46,6 +46,12 @@ export class MyScene extends CGFscene {
     this.earthMaterial.setShininess(30.0);
     this.earthMaterial.setTexture(this.earthTexture);
     this.earthMaterial.setTextureWrap('REPEAT', 'CLAMP_TO_EDGE');
+    
+    // Carregar a textura do panorama e criar o objeto MyPanorama
+    this.panoramaTexture = new CGFtexture(this, 'textures/panorama.jpg');
+    this.panorama = new MyPanorama(this, this.panoramaTexture);
+      
+
   }
   initLights() {
     this.lights[0].setPosition(200, 200, 200, 1);
@@ -55,10 +61,10 @@ export class MyScene extends CGFscene {
   }
   initCameras() {
     this.camera = new CGFcamera(
-      0.4,
+      0.8,
       0.1,
       1000,
-      vec3.fromValues(200, 200, 200),
+      vec3.fromValues(50, 0, 50),
       vec3.fromValues(0, 0, 0)
     );
   }
@@ -103,21 +109,18 @@ export class MyScene extends CGFscene {
     this.applyViewMatrix();
 
     // Draw axis
-    this.axis.display();
+    //this.axis.display();
 
     this.setDefaultAppearance();
-
+    this.panorama.display();
 
     this.earthMaterial.apply();
     this.pushMatrix();
-    // Rotate the sphere around the Y axis
-    const time = this.scene?.time || 0;
-    this.rotate(time / 10000, 0, 1, 0); 
 
-    // Ajustar o tamanho do planeta
-    this.scale(10, 10, 10); // Tamanho apropriado para visualização
     
-    this.earthSphere.display();
+    this.scale(10, 10, 10); 
+    
+    //this.earthSphere.display();
     this.popMatrix();
 
     
