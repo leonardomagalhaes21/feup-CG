@@ -26,7 +26,7 @@ export class MyScene extends CGFscene {
 
     this.gl.clearDepth(100.0);
     this.gl.enable(this.gl.DEPTH_TEST);
-    this.gl.enable(this.gl.CULL_FACE);
+    this.gl.disable(this.gl.CULL_FACE);
     this.gl.depthFunc(this.gl.LEQUAL);
 
     this.enableTextures(true);
@@ -53,6 +53,9 @@ export class MyScene extends CGFscene {
     // Carregar a textura do panorama e criar o objeto MyPanorama
     this.panoramaTexture = new CGFtexture(this, 'textures/panorama.jpg');
     this.panorama = new MyPanorama(this, this.panoramaTexture);
+    this.heliportTexture = new CGFtexture(this, 'textures/heliport.jpeg');
+    this.bombeirosTexture = new CGFtexture(this, 'textures/bombeiros.jpeg');
+
 
 
 
@@ -63,17 +66,31 @@ export class MyScene extends CGFscene {
       3,
       3,
       this.windowTexture,
-      [0.9, 0.2, 0.2]
+      this.heliportTexture,
+      this.bombeirosTexture,
+      [1.0, 1.0, 1.0]
     );
       
 
   }
   initLights() {
-    this.lights[0].setPosition(200, 200, 200, 1);
-    this.lights[0].setDiffuse(1.0, 1.0, 1.0, 1.0);
+    // Luz direcional geral (ilumina de todos os lados)
+    this.lights[0].setPosition(0, 100, 0, 1);
+    this.lights[0].setDiffuse(0.9, 0.9, 0.9, 1.0);
+    this.lights[0].setAmbient(0.5, 0.5, 0.5, 1.0); // Aumentar luz ambiente
+    this.lights[0].setSpecular(0.1, 0.1, 0.1, 1.0);
     this.lights[0].enable();
+    
+    // Luz adicional da direção oposta (ilumina o "lado de fora")
+    this.lights[1].setPosition(-200, 200, -200, 1);
+    this.lights[1].setDiffuse(0.8, 0.8, 0.8, 1.0);
+    this.lights[1].setAmbient(0.3, 0.3, 0.3, 1.0);
+    this.lights[1].setSpecular(0.1, 0.1, 0.1, 1.0);
+    this.lights[1].enable();
+    
     this.lights[0].update();
-  }
+    this.lights[1].update();
+}
   initCameras() {
     this.camera = new CGFcamera(
       0.8,
