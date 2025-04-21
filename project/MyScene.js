@@ -5,6 +5,7 @@ import { MyPanorama } from "./MyPanorama.js";
 import { MyBuilding } from "./MyBuilding.js";
 import { MyTree } from "./MyTree.js";
 import { MyForest } from "./MyForest.js";
+import { MyHeli } from "./MyHeli.js";
 
 /**
  * MyScene
@@ -79,6 +80,28 @@ export class MyScene extends CGFscene {
     
     // Create a forest with rows and columns
     this.forest = new MyForest(this, 5, 4, 80, 60, this.trunkTexture, this.crownTexture);
+  
+
+    this.heliCabinTexture = new CGFtexture(this, 'textures/heli_body.jpg');
+    this.heliTailTexture = new CGFtexture(this, 'textures/heli_tail.jpg');
+    this.heliBladeTexture = new CGFtexture(this, 'textures/heli_blade.jpg');
+    this.heliBucketTexture = new CGFtexture(this, 'textures/heli_bucket.jpg');
+    
+    this.helicopter = new MyHeli(
+        this, 
+        this.heliCabinTexture, 
+        this.heliTailTexture, 
+        this.heliBladeTexture, 
+        this.heliBucketTexture
+    );
+    
+    
+    this.helicopter.x = -150; 
+    this.helicopter.y = 20;    
+    this.helicopter.z = -150; 
+    
+    
+    this.speedFactor = 1.0;
   }
   initLights() {
     // Luz direcional geral (ilumina de todos os lados)
@@ -112,23 +135,55 @@ export class MyScene extends CGFscene {
     var keysPressed = false;
 
     if (this.gui.isKeyPressed("KeyW")) {
-      text += " W ";
-      keysPressed = true;
+      this.helicopter.accelerate(0.01 * this.speedFactor);
     }
-
+    
     if (this.gui.isKeyPressed("KeyS")) {
-      text += " S ";
-      keysPressed = true;
+        this.helicopter.accelerate(-0.01 * this.speedFactor);
     }
-    if (keysPressed)
-      console.log(text);
+    
+    if (this.gui.isKeyPressed("KeyA")) {
+        this.helicopter.turn(0.05 * this.speedFactor);
+    }
+    
+    if (this.gui.isKeyPressed("KeyD")) {
+        this.helicopter.turn(-0.05 * this.speedFactor);
+    }
+    
+    if (this.gui.isKeyPressed("KeyR")) {
+        this.helicopter.reset();
+    }
+    
+    if (this.gui.isKeyPressed("KeyP")) {
+        this.helicopter.takeOff();
+    }
+    
+    if (this.gui.isKeyPressed("KeyL")) {
+        this.helicopter.land();
+    }
   }
 
   update(t) {
+    // Calcular delta time de forma mais robusta
+    if (!this.lastT) {
+        this.lastT = t;
+        return; // Pula o primeiro frame para evitar delta time muito grande
+    }
+    
+    // Limitar delta time para evitar saltos grandes em caso de lag
+    const maxDelta = 100; // ms
+    const deltaT = Math.min(t - this.lastT, maxDelta);
+    this.lastT = t;
+    
     this.checkKeys();
     this.time = t;
-  }
+    
+    this.helicopter.update(t, deltaT);
+    
+    
+    
 
+}
   setDefaultAppearance() {
     this.setAmbient(0.5, 0.5, 0.5, 1.0);
     this.setDiffuse(0.5, 0.5, 0.5, 1.0);
@@ -145,7 +200,7 @@ export class MyScene extends CGFscene {
 
     // Draw axis
     //this.axis.display();
-
+    this.helicopter.display();
     this.setDefaultAppearance();
     this.panorama.display();
 

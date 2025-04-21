@@ -13,12 +13,13 @@ export class MyInterface extends CGFinterface {
         // call CGFinterface init
         super.init(application);
 
-        // init GUI. For more information on the methods, check:
-        // https://github.com/dataarts/dat.gui/blob/master/API.md
         this.gui = new dat.GUI();
-
+    
+        // Adicionar slider para speedFactor
+        this.gui.add(this.scene, 'speedFactor', 0.1, 3.0).name('Speed Factor');
+        
         this.initKeys();
-
+        
         return true;
     }
 

@@ -1,4 +1,5 @@
-import { CGFobject } from "../lib/CGF.js";
+import { CGFobject, CGFappearance } from "../lib/CGF.js";
+
 
 /**
  * MySphere - Implementation of a 3D sphere
@@ -8,14 +9,16 @@ import { CGFobject } from "../lib/CGF.js";
  * @param {Integer} stacks - Number of layers in each hemisphere (from equator to pole)
  * @param {Number} radius - Sphere radius (default: 1)
  * @param {Boolean} inside - Whether to see the sphere from inside (default: false)
+ * @param {Number} texScale - Texture scale factor (default: 1)
  */
 export class MySphere extends CGFobject {
-  constructor(scene, slices, stacks, radius = 1, inside = false) {
+  constructor(scene, slices, stacks, radius = 1, inside = false, texScale = 1) {
     super(scene);
     this.slices = slices;
     this.stacks = stacks;
     this.radius = radius;
     this.inside = inside;
+    this.texScale = texScale;
     
     this.initBuffers();
   }
@@ -61,11 +64,11 @@ export class MySphere extends CGFobject {
         const normalDirection = this.inside ? -1 : 1;
         this.normals.push(normalDirection * x/length, normalDirection * y/length, normalDirection * z/length);
         
-        // Calculate texture coordinates (inverted)
+        // Calculate texture coordinates with scaling factor
         // s: longitude (0 to 1 around the sphere)
         // t: latitude (0 at north pole, 0.5 at equator, 1 at south pole)
-        const s = 1 - (sliceIdx / this.slices);
-        const t = 1 - (stackIdx / (2 * this.stacks));
+        const s = (1 - (sliceIdx / this.slices)) * this.texScale;
+        const t = (1 - (stackIdx / (2 * this.stacks))) * this.texScale;
         this.texCoords.push(s, t);
       }
     }
