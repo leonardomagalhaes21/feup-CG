@@ -167,10 +167,10 @@ export class MyScene extends CGFscene {
     // Calcular delta time de forma mais robusta
     if (!this.lastT) {
         this.lastT = t;
-        return; // Pula o primeiro frame para evitar delta time muito grande
+        return; 
     }
     
-    // Limitar delta time para evitar saltos grandes em caso de lag
+   
     const maxDelta = 100; // ms
     const deltaT = Math.min(t - this.lastT, maxDelta);
     this.lastT = t;
