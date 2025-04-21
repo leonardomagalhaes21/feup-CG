@@ -13,8 +13,7 @@ export class MyPanorama extends CGFobject {
     this.scene = scene;
     this.texture = texture;
     
-    // Create an inverted sphere with a high number of divisions for smooth appearance
-    // Parameters: scene, slices, stacks, radius=1, inside=true
+    
     this.sphere = new MySphere(this.scene, 50, 25, 1, true);
     
     this.material = new CGFappearance(this.scene);

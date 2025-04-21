@@ -35,7 +35,7 @@ export class MyWindow extends CGFobject {
         this.scene.pushMatrix();
         
         // Center and scale the window
-        this.scene.translate(0, 0, 0.01); // Small offset to avoid z-fighting
+        this.scene.translate(0, 0, 0.01);
         this.scene.scale(width, height, 1);
         
         // Apply material and display window

@@ -3,8 +3,8 @@ import { MyPlane } from "./MyPlane.js";
 import { MySphere } from "./MySphere.js";
 import { MyPanorama } from "./MyPanorama.js";
 import { MyBuilding } from "./MyBuilding.js";
-
-
+import { MyTree } from "./MyTree.js";
+import { MyForest } from "./MyForest.js";
 
 /**
  * MyScene
@@ -56,9 +56,6 @@ export class MyScene extends CGFscene {
     this.heliportTexture = new CGFtexture(this, 'textures/heliport.jpeg');
     this.bombeirosTexture = new CGFtexture(this, 'textures/bombeiros.jpeg');
 
-
-
-
     this.windowTexture = new CGFtexture(this, 'textures/window.jpg');
     this.fireStation = new MyBuilding(
       this,
@@ -70,14 +67,24 @@ export class MyScene extends CGFscene {
       this.bombeirosTexture,
       [1.0, 1.0, 1.0]
     );
-      
-
+    
+    // Load tree textures
+    this.trunkTexture = new CGFtexture(this, 'textures/trunk.jpg');
+    this.crownTexture = new CGFtexture(this, 'textures/leaves.jpg');
+    
+    // Create example trees with different parameters and textures
+    this.sampleTree1 = new MyTree(this, 5, 'X', 0.5, 5, [0.2, 0.7, 0.2], this.trunkTexture, this.crownTexture); 
+    this.sampleTree2 = new MyTree(this, -8, 'Z', 0.4, 4, [0.1, 0.6, 0.1], this.trunkTexture, this.crownTexture);
+    this.sampleTree3 = new MyTree(this, 0, 'X', 0.6, 6, [0.15, 0.55, 0.15], this.trunkTexture, this.crownTexture);
+    
+    // Create a forest with rows and columns
+    this.forest = new MyForest(this, 5, 4, 80, 60, this.trunkTexture, this.crownTexture);
   }
   initLights() {
     // Luz direcional geral (ilumina de todos os lados)
     this.lights[0].setPosition(0, 100, 0, 1);
     this.lights[0].setDiffuse(0.9, 0.9, 0.9, 1.0);
-    this.lights[0].setAmbient(0.5, 0.5, 0.5, 1.0); // Aumentar luz ambiente
+    this.lights[0].setAmbient(0.5, 0.5, 0.5, 1.0); 
     this.lights[0].setSpecular(0.1, 0.1, 0.1, 1.0);
     this.lights[0].enable();
     
@@ -104,7 +111,6 @@ export class MyScene extends CGFscene {
     var text = "Keys pressed: ";
     var keysPressed = false;
 
-    // Check for key codes e.g. in https://keycode.info/
     if (this.gui.isKeyPressed("KeyW")) {
       text += " W ";
       keysPressed = true;
@@ -131,13 +137,10 @@ export class MyScene extends CGFscene {
   }
   display() {
 
-    // Clear image and depth buffer everytime we update the scene
     this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-    // Initialize Model-View matrix as identity (no transformation
     this.updateProjectionMatrix();
     this.loadIdentity();
-    // Apply transformations corresponding to the camera position relative to the origin
     this.applyViewMatrix();
 
     // Draw axis
@@ -156,5 +159,26 @@ export class MyScene extends CGFscene {
     this.fireStation.display();
     this.popMatrix();
     
+    // Display sample trees
+    this.pushMatrix();
+    this.translate(-120, 0, -140);
+    this.sampleTree1.display();
+    this.popMatrix();
+    
+    this.pushMatrix();
+    this.translate(-130, 0, -145);
+    this.sampleTree2.display();
+    this.popMatrix();
+    
+    this.pushMatrix();
+    this.translate(-125, 0, -155);
+    this.sampleTree3.display();
+    this.popMatrix();
+    
+    // Display forest
+    this.pushMatrix();
+    this.translate(-200, 0, -180);
+    this.forest.display();
+    this.popMatrix();
   }
 }

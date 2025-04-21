@@ -54,12 +54,7 @@ export class MyBuilding extends CGFobject {
         this.foundationMaterial.setSpecular(0.2, 0.2, 0.2, 1.0);
         this.foundationMaterial.setShininess(10.0);
 
-        // Porta (marrom)
-        this.doorMaterial = new CGFappearance(this.scene);
-        this.doorMaterial.setAmbient(0.3, 0.2, 0.1, 1.0);
-        this.doorMaterial.setDiffuse(0.5, 0.3, 0.1, 1.0);
-        this.doorMaterial.setSpecular(0.1, 0.1, 0.1, 1.0);
-        this.doorMaterial.setShininess(10.0);
+        
         
         // Placa "BOMBEIROS"
         this.bombeirosSignMaterial = new CGFappearance(this.scene);
@@ -87,7 +82,7 @@ export class MyBuilding extends CGFobject {
     }
 
     drawModule(width, height, depth, floors, isCenter, isLeft = null) {
-        // Base/fundação
+        // Base
         this.scene.pushMatrix();
         this.scene.translate(0, -0.1, 0);
         this.scene.rotate(-Math.PI/2, 1, 0, 0);
@@ -181,19 +176,15 @@ export class MyBuilding extends CGFobject {
             }
         }
         
-        // Adicionar janelas
         if (isCenter) {
-            // Para o módulo central
             this.drawDoor();
             this.drawSign();
             
-            // Janelas nos andares superiores
             for (let floor = 1; floor < floors; floor++) {
                 this.drawWindows(width, depth/2, floor);
                 this.drawWindows(width, -depth/2, floor);
             }
         } else {
-            // Para os módulos laterais - apenas janelas frontais e traseiras
             for (let floor = 0; floor < floors; floor++) {
                 this.drawWindows(width, depth/2, floor);
                 this.drawWindows(width, -depth/2, floor);
@@ -217,80 +208,70 @@ export class MyBuilding extends CGFobject {
     }
 
     /**
- * Desenha janelas com bordas azuis
- */
-drawWindows(moduleWidth, z, floor) {
-    const spacing = moduleWidth / 3;
-    const borderSize = 0.05; // Tamanho da borda
-    const borderColor = [0.0, 0.1, 0.5, 1.0]; // Azul escuro
-    
-    // Material para a borda
-    const borderMaterial = new CGFappearance(this.scene);
-    borderMaterial.setAmbient(borderColor[0], borderColor[1], borderColor[2], borderColor[3]);
-    borderMaterial.setDiffuse(borderColor[0], borderColor[1], borderColor[2], borderColor[3]);
-    borderMaterial.setSpecular(0.5, 0.5, 0.5, 1.0);
-    borderMaterial.setShininess(10.0);
-    
-    // Posições das janelas
-    const positions = [
-        [-spacing, floor * this.floorHeight + this.floorHeight/2, z + 0.01],
-        [spacing, floor * this.floorHeight + this.floorHeight/2, z + 0.01]
-    ];
-    
-    // Desenhar cada janela
-    for (const pos of positions) {
-        // Primeiro desenha a borda (um retângulo ligeiramente maior)
+     * Desenha janelas com bordas azuis
+     */
+    drawWindows(moduleWidth, z, floor) {
+        const spacing = moduleWidth / 3;
+        const borderSize = 0.05; 
+        const borderColor = [0.0, 0.1, 0.5, 1.0]; 
+        
+        // Material para a borda
+        const borderMaterial = new CGFappearance(this.scene);
+        borderMaterial.setAmbient(borderColor[0], borderColor[1], borderColor[2], borderColor[3]);
+        borderMaterial.setDiffuse(borderColor[0], borderColor[1], borderColor[2], borderColor[3]);
+        borderMaterial.setSpecular(0.5, 0.5, 0.5, 1.0);
+        borderMaterial.setShininess(10.0);
+        
+        // Posições das janelas
+        const positions = [
+            [-spacing, floor * this.floorHeight + this.floorHeight/2, z + 0.01],
+            [spacing, floor * this.floorHeight + this.floorHeight/2, z + 0.01]
+        ];
+        
+        // Desenhar cada janela
+        for (const pos of positions) {
+            this.scene.pushMatrix();
+            this.scene.translate(pos[0], pos[1], pos[2]);
+            this.scene.scale(this.windowWidth + borderSize*2, this.windowHeight + borderSize*2, 1);
+            borderMaterial.apply();
+            this.wall.display();
+            this.scene.popMatrix();
+            
+            this.scene.pushMatrix();
+            this.scene.translate(pos[0], pos[1], pos[2] + 0.01);
+            
+            this.window.display(this.windowWidth, this.windowHeight);
+            this.scene.popMatrix();
+        }
+    }
+        
+    drawDoor() {
+        const doorWidth = this.doorWidth * 0.6; 
+        const doorHeight = this.doorHeight;
+        const borderSize = 0.08; 
+        const borderColor = [0.0, 0.1, 0.5, 1.0]; 
+        
+        // Material para a borda
+        const borderMaterial = new CGFappearance(this.scene);
+        borderMaterial.setAmbient(borderColor[0], borderColor[1], borderColor[2], borderColor[3]);
+        borderMaterial.setDiffuse(borderColor[0], borderColor[1], borderColor[2], borderColor[3]);
+        borderMaterial.setSpecular(0.5, 0.5, 0.5, 1.0);
+        borderMaterial.setShininess(10.0);
+        
         this.scene.pushMatrix();
-        this.scene.translate(pos[0], pos[1], pos[2]);
-        this.scene.scale(this.windowWidth + borderSize*2, this.windowHeight + borderSize*2, 1);
+        this.scene.translate(0, doorHeight/2, this.buildingDepth/2 + 0.01);
+        this.scene.scale(doorWidth + borderSize*2, doorHeight + borderSize*2, 1);
         borderMaterial.apply();
         this.wall.display();
         this.scene.popMatrix();
         
-        // Depois desenha a janela por cima
         this.scene.pushMatrix();
-        this.scene.translate(pos[0], pos[1], pos[2] + 0.01);
+        this.scene.translate(0, doorHeight/2, this.buildingDepth/2 + 0.02); 
         
-        // Aqui não queremos alterar as coordenadas de textura
-        // Removemos a chamada para setTexCoords
-        // Usamos a textura completa como definida na classe MyWindow
+        this.window.display(doorWidth, doorHeight);
         
-        this.window.display(this.windowWidth, this.windowHeight);
         this.scene.popMatrix();
     }
-}
-    
-drawDoor() {
-    const doorWidth = this.doorWidth * 0.6; // Porta mais estreita (60% da largura original)
-    const doorHeight = this.doorHeight;
-    const borderSize = 0.08; // Borda ligeiramente mais grossa para a porta
-    const borderColor = [0.0, 0.1, 0.5, 1.0]; // Azul escuro, igual às janelas
-    
-    // Material para a borda
-    const borderMaterial = new CGFappearance(this.scene);
-    borderMaterial.setAmbient(borderColor[0], borderColor[1], borderColor[2], borderColor[3]);
-    borderMaterial.setDiffuse(borderColor[0], borderColor[1], borderColor[2], borderColor[3]);
-    borderMaterial.setSpecular(0.5, 0.5, 0.5, 1.0);
-    borderMaterial.setShininess(10.0);
-    
-    // Primeiro desenha a borda (um retângulo ligeiramente maior)
-    this.scene.pushMatrix();
-    this.scene.translate(0, doorHeight/2, this.buildingDepth/2 + 0.01);
-    this.scene.scale(doorWidth + borderSize*2, doorHeight + borderSize*2, 1);
-    borderMaterial.apply();
-    this.wall.display();
-    this.scene.popMatrix();
-    
-    // Usa a mesma janela, mas com dimensões diferentes para criar a porta
-    this.scene.pushMatrix();
-    this.scene.translate(0, doorHeight/2, this.buildingDepth/2 + 0.02); // +0.02 para evitar z-fighting
-    
-    // Aqui usamos o objeto window, mas definimos a largura e altura específicas para a porta
-    // Isso vai esticar a textura da janela horizontalmente
-    this.window.display(doorWidth, doorHeight);
-    
-    this.scene.popMatrix();
-}
     
     drawSign() {
         const signWidth = this.doorWidth * 1.2;
