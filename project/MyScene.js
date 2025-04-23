@@ -99,19 +99,21 @@ export class MyScene extends CGFscene {
     this.helicopter.x = -150; 
     this.helicopter.y = 20;    
     this.helicopter.z = -150; 
-    
+    this.helicopter.state = 'flying';
+    this.helicopter.bucketDeployed = true;
+    this.helicopter.bladeSpeed = this.helicopter.maxBladeSpeed*0.1;
     
     this.speedFactor = 1.0;
   }
   initLights() {
-    // Luz direcional geral (ilumina de todos os lados)
+    // Luz direcional geral 
     this.lights[0].setPosition(0, 100, 0, 1);
     this.lights[0].setDiffuse(0.9, 0.9, 0.9, 1.0);
     this.lights[0].setAmbient(0.5, 0.5, 0.5, 1.0); 
     this.lights[0].setSpecular(0.1, 0.1, 0.1, 1.0);
     this.lights[0].enable();
     
-    // Luz adicional da direção oposta (ilumina o "lado de fora")
+    // Luz adicional da direção oposta 
     this.lights[1].setPosition(-200, 200, -200, 1);
     this.lights[1].setDiffuse(0.8, 0.8, 0.8, 1.0);
     this.lights[1].setAmbient(0.3, 0.3, 0.3, 1.0);
@@ -150,14 +152,17 @@ export class MyScene extends CGFscene {
         this.helicopter.turn(-0.05 * this.speedFactor);
     }
     
+    // desaparece
     if (this.gui.isKeyPressed("KeyR")) {
         this.helicopter.reset();
     }
-    
+
+    //take off
     if (this.gui.isKeyPressed("KeyP")) {
         this.helicopter.takeOff();
     }
     
+    //landing
     if (this.gui.isKeyPressed("KeyL")) {
         this.helicopter.land();
     }
@@ -171,7 +176,7 @@ export class MyScene extends CGFscene {
     }
     
    
-    const maxDelta = 100; // ms
+    const maxDelta = 100;
     const deltaT = Math.min(t - this.lastT, maxDelta);
     this.lastT = t;
     
@@ -180,9 +185,6 @@ export class MyScene extends CGFscene {
     
     this.helicopter.update(t, deltaT);
     
-    
-    
-
 }
   setDefaultAppearance() {
     this.setAmbient(0.5, 0.5, 0.5, 1.0);

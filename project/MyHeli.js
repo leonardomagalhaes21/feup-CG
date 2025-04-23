@@ -30,7 +30,7 @@ export class MyHeli extends CGFobject {
         this.state = 'landed'; // 'landed', 'taking_off', 'flying', 'landing', 'filling_bucket'
         this.bladeRotation = 0;
         this.bladeSpeed = 0;
-        this.maxBladeSpeed = Math.PI * 8;
+        this.maxBladeSpeed = Math.PI * 0.5;
         
         // Inclinação
         this.pitchAngle = 0;
@@ -111,7 +111,7 @@ export class MyHeli extends CGFobject {
             this.bladeMaterial.setTextureWrap('REPEAT', 'REPEAT');
         }
         
-        // Material do trem de pouso
+        // Material do pouso
         this.gearMaterial = new CGFappearance(this.scene);
         this.gearMaterial.setAmbient(0.2, 0.2, 0.2, 1.0);
         this.gearMaterial.setDiffuse(0.3, 0.3, 0.3, 1.0);
@@ -137,16 +137,13 @@ export class MyHeli extends CGFobject {
     }
     
     update(t, deltaT) {
-        // Atualizar a rotação das hélices
         this.bladeRotation = (this.bladeRotation + this.bladeSpeed * deltaT / 50) % (2 * Math.PI);
         
-        // Atualizar a posição de acordo com a velocidade e o tempo decorrido
         if (this.state === 'flying') {
             this.x += this.velocity[0] * deltaT / 50;
             this.z += this.velocity[2] * deltaT / 50;
             
-            const targetPitch = this.velocity[2] > 0 ? -this.maxPitchAngle * (this.velocity[2] / 0.3) : 
-                               this.velocity[2] < 0 ? this.maxPitchAngle * (-this.velocity[2] / 0.3) : 0;
+            const targetPitch = -this.maxPitchAngle * (this.velocity[2] / 0.3);
             
             this.pitchAngle = this.pitchAngle * 0.9 + targetPitch * 0.1;
         } 
@@ -158,13 +155,10 @@ export class MyHeli extends CGFobject {
                 this.verticalSpeed = this.maxVerticalSpeed;
                 this.y += this.verticalSpeed * deltaT / 50;
                 
-                if (this.y > this.cruisingAltitude / 2 && !this.bucketDeployed) {
+                if (this.y > this.cruisingAltitude * 0.3 && !this.bucketDeployed) {
                     this.bucketDeployed = true;
                 }
                 
-                if (!this.bucketDeployed && this.bladeSpeed > this.maxBladeSpeed * 0.5) {
-                    this.bucketDeployed = true;
-                }
                 if (this.y >= this.cruisingAltitude) {
                     this.y = this.cruisingAltitude;
                     this.state = 'flying';
@@ -177,13 +171,9 @@ export class MyHeli extends CGFobject {
                 this.verticalSpeed = -this.maxVerticalSpeed;
                 this.y += this.verticalSpeed * deltaT / 50;
                 
-                // Recolher o balde quando estiver a meio caminho da altura de pouso
-                if (this.y < this.cruisingAltitude / 2 && this.bucketDeployed) {
+
+                if (this.y < this.cruisingAltitude * 0.3 && this.bucketDeployed) {
                     this.bucketDeployed = false;
-                }
-                if (this.y < 2 && this.bucketDeployed) {
-                    this.bucketDeployed = false;
-                    console.log("Balde recolhido!"); // Debug
                 }
                 
                 if (this.y <= 0) {
@@ -191,24 +181,36 @@ export class MyHeli extends CGFobject {
                     this.verticalSpeed = 0;
                 }
             } else {
-                // Reduzir gradualmente a velocidade das hélices
                 if (this.bladeSpeed > 0) {
                     this.bladeSpeed -= 0.02;
                 } else {
                     this.bladeSpeed = 0;
                     this.state = 'landed';
                     
-                    // Resetar inclinação
                     this.pitchAngle = 0;
                 }
             }
         }
         else if (this.state === 'filling_bucket') {
-            // Implementar lógica para encher o balde
-            // ...
-            
-            // Após um tempo, o balde fica cheio
-            this.bucketFilled = true;
+
+            if (this.y > 2) {
+                this.verticalSpeed = -this.maxVerticalSpeed / 2;
+                this.y += this.verticalSpeed * deltaT / 50;
+            } else {
+
+                if (!this.bucketFilled) {
+                    if (!this.fillStartTime) {
+                        this.fillStartTime = t;
+                    }
+                    
+                    if (t - this.fillStartTime > 3000) {
+                        this.bucketFilled = true;
+                        this.fillStartTime = null;
+                        
+                        this.state = 'taking_off';
+                    }
+                }
+            }
         }
     }
     
@@ -217,7 +219,6 @@ export class MyHeli extends CGFobject {
             // Atualizar a orientação
             this.orientation += v;
             
-            // Normalizar orientação para [0, 2π]
             this.orientation = this.orientation % (2 * Math.PI);
             
             const speed = Math.sqrt(this.velocity[0] * this.velocity[0] + this.velocity[2] * this.velocity[2]);
@@ -250,43 +251,54 @@ export class MyHeli extends CGFobject {
         if (this.state === 'landed') {
             this.state = 'taking_off';
         } else if (this.state === 'filling_bucket' && this.bucketFilled) {
-            // Terminar de encher o balde e subir
             this.state = 'taking_off';
         }
     }
     
     land() {
         if (this.state === 'flying') {
-
-            const isOverHeliport = true; // temporário
+            const distanceToHeliport = Math.sqrt(
+                Math.pow(this.x - (-150), 2) + 
+                Math.pow(this.z - (-150), 2)
+            );
+            
+            const isOverHeliport = distanceToHeliport < 20;
             
             if (isOverHeliport) {
                 this.state = 'landing';
-                this.velocity = [0, 0, 0];
+                this.velocity = [0, 0, 0]; 
+                return;
             }
-            else {
-                
-            }
-        } 
-        else if (this.state === 'flying' && !this.bucketFilled) {
-            // Verificar se está sobre o lago
-            // [Implementar lógica para verificar se está sobre o lago]
-            const isOverLake = false; // temporário
             
-            if (isOverLake) {
+            // Verifica se está sobre uma região específica com limites em X e Z
+            const minX = -220;
+            const maxX = -180;
+            const minZ = -120;
+            const maxZ = -80;
+            const minHeight = 16;
+            
+            const isInLakeRegion = (
+                this.x >= minX && 
+                this.x <= maxX && 
+                this.z >= minZ && 
+                this.z <= maxZ && 
+                this.y >= minHeight
+            );
+            
+            if (isInLakeRegion && !this.bucketFilled) {
+                console.log("Descendo para encher o balde na área do lago");
                 this.state = 'filling_bucket';
                 this.velocity = [0, 0, 0];
-                // Iniciar descida para o lago
-                this.verticalSpeed = -this.maxVerticalSpeed / 2;
+                return;
             }
+            
         }
     }
     
     reset() {
-        // Resetar posição e estado para o heliporto
-        this.x = 0;
+        this.x = -150;  
         this.y = 0;
-        this.z = 0;
+        this.z = -150;  
         this.orientation = 0;
         this.velocity = [0, 0, 0];
         this.state = 'landed';
@@ -295,6 +307,8 @@ export class MyHeli extends CGFobject {
         this.pitchAngle = 0;
         this.bucketDeployed = false;
         this.bucketFilled = false;
+        this.fillStartTime = null;
+        
     }
     
     display() {
@@ -316,7 +330,7 @@ export class MyHeli extends CGFobject {
         this.scene.pushMatrix();
         this.scene.translate(0, 0.4, 2.2); 
         this.scene.scale(1.2, 1.0, 1.2); 
-        this.scene.rotate(-Math.PI/5, 3., 0, 0); 
+        this.scene.rotate(-Math.PI/5, 3, 0, 0); 
         
         this.scene.gl.enable(this.scene.gl.BLEND);
         this.scene.gl.blendFunc(this.scene.gl.SRC_ALPHA, this.scene.gl.ONE_MINUS_SRC_ALPHA);
@@ -368,7 +382,7 @@ export class MyHeli extends CGFobject {
         this.scene.pushMatrix();
         this.scene.translate(0, 0, -4);
         this.scene.rotate(Math.PI/2, 1, 0, 0);
-        this.scene.scale(0.3, 5, 0.3);
+        this.scene.scale(0.3, 4, 0.3);
         this.tailMaterial.apply();
         this.tail.display();
         this.scene.popMatrix();
@@ -430,7 +444,7 @@ export class MyHeli extends CGFobject {
         // Hélice da cauda 
         this.scene.pushMatrix();
         this.scene.translate(0, 1, -7);
-        this.scene.rotate(this.bladeRotation * 1.5, 1, 0, 0);
+        this.scene.rotate(this.bladeRotation * 1.5, 0, 0, 1);
         
         // Pá 1
         this.scene.pushMatrix();
@@ -509,36 +523,7 @@ export class MyHeli extends CGFobject {
         this.landingGear.display();
         this.scene.popMatrix();
 
-        // Conexões verticais de suporte
-        this.scene.pushMatrix();
-        this.scene.translate(1, -1.9, 1.4);
-        this.scene.scale(0.1, 0.2, 0.1);
-        this.gearMaterial.apply();
-        this.landingGear.display();
-        this.scene.popMatrix();
-
-        this.scene.pushMatrix();
-        this.scene.translate(-1, -1.9, 1.4);
-        this.scene.scale(0.1, 0.2, 0.1);
-        this.gearMaterial.apply();
-        this.landingGear.display();
-        this.scene.popMatrix();
-
-        // Conexões verticais de suporte
-        this.scene.pushMatrix();
-        this.scene.translate(1, -1.9, -1.4);
-        this.scene.scale(0.1, 0.2, 0.1);
-        this.gearMaterial.apply();
-        this.landingGear.display();
-        this.scene.popMatrix();
-
-        this.scene.pushMatrix();
-        this.scene.translate(-1, -1.9, -1.4);
-        this.scene.scale(0.1, 0.2, 0.1);
-        this.gearMaterial.apply();
-        this.landingGear.display();
-        this.scene.popMatrix();
-
+        
         // Pés de apoio nas quatro pontas
         this.scene.pushMatrix();
         this.scene.translate(1, -2.0, 1.4);
@@ -608,7 +593,7 @@ export class MyHeli extends CGFobject {
             // Cabo principal que liga o helicóptero ao balde
             this.scene.pushMatrix();
             this.scene.translate(0, -1.5, 0);
-            this.scene.scale(0.08, 3, 0.08);
+            this.scene.scale(0.08, 2.5, 0.08);
             this.scene.rotate(Math.PI/2, 1, 0, 0);
             this.gearMaterial.apply();
             this.landingGear.display();

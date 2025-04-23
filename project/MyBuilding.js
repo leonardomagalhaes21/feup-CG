@@ -136,6 +136,7 @@ export class MyBuilding extends CGFobject {
             this.wall.display();
             this.scene.popMatrix();
         } else {
+            
             // Faces laterais dos módulos laterais
             if (isLeft === true) {
                 // Face externa esquerda
@@ -182,12 +183,10 @@ export class MyBuilding extends CGFobject {
             
             for (let floor = 1; floor < floors; floor++) {
                 this.drawWindows(width, depth/2, floor);
-                this.drawWindows(width, -depth/2, floor);
             }
         } else {
             for (let floor = 0; floor < floors; floor++) {
                 this.drawWindows(width, depth/2, floor);
-                this.drawWindows(width, -depth/2, floor);
             }
         }
         
@@ -211,7 +210,7 @@ export class MyBuilding extends CGFobject {
      * Desenha janelas com bordas azuis
      */
     drawWindows(moduleWidth, z, floor) {
-        const spacing = moduleWidth / 3;
+        const spacing = moduleWidth / 4.5;
         const borderSize = 0.05; 
         const borderColor = [0.0, 0.1, 0.5, 1.0]; 
         
@@ -264,13 +263,22 @@ export class MyBuilding extends CGFobject {
         borderMaterial.apply();
         this.wall.display();
         this.scene.popMatrix();
+
+        // Material for the door (custom color)
+        const doorMaterial = new CGFappearance(this.scene);
+        doorMaterial.setAmbient(0.3, 0.2, 0.1, 1.0);
+        doorMaterial.setDiffuse(0.5, 0.3, 0.2, 1.0);
+        doorMaterial.setSpecular(0.1, 0.1, 0.1, 1.0);
+        doorMaterial.setShininess(5.0);
+    
         
         this.scene.pushMatrix();
-        this.scene.translate(0, doorHeight/2, this.buildingDepth/2 + 0.02); 
-        
-        this.window.display(doorWidth, doorHeight);
-        
+        this.scene.translate(0, doorHeight / 2, this.buildingDepth / 2 + 0.02);
+        this.scene.scale(doorWidth, doorHeight, 1);
+        doorMaterial.apply();
+        this.wall.display();
         this.scene.popMatrix();
+
     }
     
     drawSign() {

@@ -15,7 +15,7 @@ import { MyPyramid } from "./MyPyramid.js";
  * @param {CGFtexture} crownTexture - Optional texture for the crown
  */
 export class MyTree extends CGFobject {
-    constructor(scene, tiltAngle = 0, tiltAxis = 'X', trunkRadius = 0.5, treeHeight = 10, // Altura padrão aumentada para 7
+    constructor(scene, tiltAngle = 0, tiltAxis = 'X', trunkRadius = 0.5, treeHeight = 10,
         crownColor = [0.133, 0.545, 0.133], trunkTexture = null, crownTexture = null) {
     super(scene);
     this.scene = scene;
@@ -286,45 +286,46 @@ export class MyTree extends CGFobject {
     
     display() {
         this.scene.pushMatrix();
-        
+    
+        // Draw the trunk (always vertical)
+        this.trunkMaterial.apply();
+        this.scene.pushMatrix();
+        this.scene.rotate(-Math.PI / 2, 1, 0, 0); 
+        this.scene.scale(this.trunkRadius * 0.7, this.trunkRadius*0.7, this.trunkHeight);
+        this.trunk.display();
+        this.scene.popMatrix();
+    
+        // Apply tilt to the crown only
+        this.scene.pushMatrix();
         if (this.tiltAxis === 'X') {
             this.scene.rotate(this.tiltAngle, 1, 0, 0);
         } else if (this.tiltAxis === 'Z') {
             this.scene.rotate(this.tiltAngle, 0, 0, 1);
         }
-        
-        this.trunkMaterial.apply();
-        this.scene.pushMatrix();
-        
-        this.scene.rotate(-Math.PI/2, 1, 0, 0);
-        
-        this.scene.scale(this.trunkRadius, this.trunkRadius, this.trunkHeight);
-        
-        this.trunk.display();
-        this.scene.popMatrix();
-        
+    
+        // Draw the crown
         this.crownMaterial.apply();
-        
-        this.scene.translate(0, this.trunkHeight, 0);
-        
+        this.scene.translate(0, this.trunkHeight, 0); 
+    
         const layerHeight = this.crownHeight / this.numLayers;
-        let currentRadius = this.trunkRadius * 3; 
-        
+        let currentRadius = this.trunkRadius * 3;
+    
         for (let layer = 0; layer < this.numLayers; layer++) {
             const layerFactor = 0.8 - (layer / this.numLayers) * 0.5;
             const pyramidBaseSize = currentRadius * 1.5 * layerFactor;
             const pyramidHeight = layerHeight * 1.5;
-            
+    
             this.scene.pushMatrix();
-            this.scene.rotate((layer % 2) * Math.PI/6, 0, 1, 0);
+            this.scene.rotate((layer % 2) * Math.PI / 6, 0, 1, 0); 
             this.scene.scale(pyramidBaseSize, pyramidHeight, pyramidBaseSize);
             this.pyramid.display();
             this.scene.popMatrix();
-            
-            this.scene.translate(0, layerHeight * 0.6, 0);
+    
+            this.scene.translate(0, layerHeight * 0.6, 0); 
             currentRadius *= 0.88;
         }
-        
+    
+        this.scene.popMatrix(); 
         this.scene.popMatrix();
     }
 }
