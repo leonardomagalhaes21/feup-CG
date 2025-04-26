@@ -74,9 +74,6 @@ export class MyScene extends CGFscene {
     this.crownTexture = new CGFtexture(this, 'textures/leaves.jpg');
     
     // Create example trees with different parameters and textures
-    this.sampleTree1 = new MyTree(this, 5, 'X', 0.5, 5, [0.2, 0.7, 0.2], this.trunkTexture, this.crownTexture); 
-    this.sampleTree2 = new MyTree(this, -8, 'Z', 0.4, 4, [0.1, 0.6, 0.1], this.trunkTexture, this.crownTexture);
-    this.sampleTree3 = new MyTree(this, 0, 'X', 0.6, 6, [0.15, 0.55, 0.15], this.trunkTexture, this.crownTexture);
     
     // Create a forest with rows and columns
     this.forest = new MyForest(this, 5, 4, 80, 60, this.trunkTexture, this.crownTexture);
@@ -97,8 +94,8 @@ export class MyScene extends CGFscene {
     
     
     this.helicopter.x = -150; 
-    this.helicopter.y = 20;    
-    this.helicopter.z = -150; 
+    this.helicopter.y = -13;    
+    this.helicopter.z = -250; 
     this.helicopter.state = 'flying';
     this.helicopter.bucketDeployed = true;
     this.helicopter.bladeSpeed = this.helicopter.maxBladeSpeed*0.1;
@@ -131,6 +128,10 @@ export class MyScene extends CGFscene {
       vec3.fromValues(-100, 20, -100), 
       vec3.fromValues(-150, 10, -150)  
     );
+    this.cameraMode = 'follow'; // 'follow' or 'static'
+    this.cameraDistance = 20;   // Distance behind helicopter
+    this.cameraHeight = 8;      // Height above helicopter
+    this.cameraSmoothness = 0.1;
   }
   checkKeys() {
     var text = "Keys pressed: ";
@@ -166,6 +167,16 @@ export class MyScene extends CGFscene {
     if (this.gui.isKeyPressed("KeyL")) {
         this.helicopter.land();
     }
+
+    // Camera lock
+    if (this.gui.isKeyPressed("KeyC")) {
+      if (!this.cKeyPressed) {
+          this.toggleCameraMode();
+          this.cKeyPressed = true;
+      }
+    } else {
+        this.cKeyPressed = false;
+    }
   }
 
   update(t) {
@@ -175,7 +186,6 @@ export class MyScene extends CGFscene {
         return; 
     }
     
-   
     const maxDelta = 100;
     const deltaT = Math.min(t - this.lastT, maxDelta);
     this.lastT = t;
@@ -185,7 +195,49 @@ export class MyScene extends CGFscene {
     
     this.helicopter.update(t, deltaT);
     
-}
+    // Update camera to follow helicopter if in follow mode
+    if (this.cameraMode === 'follow') {
+      this.updateCameraPosition();
+    }
+  }
+  updateCameraPosition() {
+    // Calculate position behind helicopter based on orientation
+    const dx = -Math.sin(this.helicopter.orientation) * this.cameraDistance;
+    const dz = -Math.cos(this.helicopter.orientation) * this.cameraDistance;
+    
+    // Calculate target camera position
+    const targetX = this.helicopter.x + dx;
+    const targetY = this.helicopter.y + this.cameraHeight;
+    const targetZ = this.helicopter.z + dz;
+    
+    // Get current camera position
+    const currentPos = this.camera.position;
+    
+    // Smoothly interpolate between current and target positions
+    const newX = currentPos[0] * (1 - this.cameraSmoothness) + targetX * this.cameraSmoothness;
+    const newY = currentPos[1] * (1 - this.cameraSmoothness) + targetY * this.cameraSmoothness;
+    const newZ = currentPos[2] * (1 - this.cameraSmoothness) + targetZ * this.cameraSmoothness;
+    
+    // Update camera position
+    this.camera.position = vec3.fromValues(newX, newY, newZ);
+    
+    // Set target to helicopter position
+    this.camera.target = vec3.fromValues(this.helicopter.x, this.helicopter.y, this.helicopter.z);
+  }
+  toggleCameraMode() {
+    if (this.cameraMode === 'follow') {
+      this.cameraMode = 'static';
+      // Reset to original static camera position
+      this.camera.position = vec3.fromValues(-100, 20, -100);
+      this.camera.target = vec3.fromValues(-150, 10, -150);
+    } else {
+      this.cameraMode = 'follow';
+      this.updateCameraPosition();
+    }
+  }
+
+  
+
   setDefaultAppearance() {
     this.setAmbient(0.5, 0.5, 0.5, 1.0);
     this.setDiffuse(0.5, 0.5, 0.5, 1.0);
@@ -210,28 +262,12 @@ export class MyScene extends CGFscene {
   
     
     this.pushMatrix();
-    this.translate(-150, 0, -150);
+    this.translate(-150, -30, -250);
     
     
     this.fireStation.display();
     this.popMatrix();
-    
-    // Display sample trees
-    this.pushMatrix();
-    this.translate(-120, 0, -140);
-    this.sampleTree1.display();
-    this.popMatrix();
-    
-    this.pushMatrix();
-    this.translate(-130, 0, -145);
-    this.sampleTree2.display();
-    this.popMatrix();
-    
-    this.pushMatrix();
-    this.translate(-125, 0, -155);
-    this.sampleTree3.display();
-    this.popMatrix();
-    
+
     // Display forest
     this.pushMatrix();
     this.translate(-200, 0, -180);

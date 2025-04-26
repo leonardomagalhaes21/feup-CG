@@ -15,7 +15,6 @@ export class MyInterface extends CGFinterface {
 
         this.gui = new dat.GUI();
     
-        // Adicionar slider para speedFactor
         this.gui.add(this.scene, 'speedFactor', 0.1, 3.0).name('Speed Factor');
         
         this.initKeys();
