@@ -228,8 +228,8 @@ export class MyScene extends CGFscene {
     if (this.cameraMode === 'follow') {
       this.cameraMode = 'static';
       // Reset to original static camera position
-      this.camera.position = vec3.fromValues(-100, 20, -100);
-      this.camera.target = vec3.fromValues(-150, 10, -150);
+      this.camera.position = vec3.fromValues(-150, -25, -200);
+      this.camera.target = vec3.fromValues(-150, -25, -250);
     } else {
       this.cameraMode = 'follow';
       this.updateCameraPosition();
@@ -270,7 +270,7 @@ export class MyScene extends CGFscene {
 
     // Display forest
     this.pushMatrix();
-    this.translate(-200, 0, -180);
+    this.translate(-200, -30, -180);
     this.forest.display();
     this.popMatrix();
   }
