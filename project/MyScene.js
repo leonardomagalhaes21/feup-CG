@@ -37,6 +37,17 @@ export class MyScene extends CGFscene {
 
     this.setUpdatePeriod(50);
 
+    // Grass texture and material
+    this.grassTexture = new CGFtexture(this, 'textures/grass.jpg');
+    this.grassMaterial = new CGFappearance(this);
+    this.grassMaterial.setAmbient(0.3, 0.6, 0.3, 1.0);
+    this.grassMaterial.setDiffuse(0.5, 0.8, 0.5, 1.0);
+    this.grassMaterial.setSpecular(0.1, 0.1, 0.1, 1.0);
+    this.grassMaterial.setShininess(10.0);
+    this.grassMaterial.setTexture(this.grassTexture);
+    this.grassMaterial.setTextureWrap('REPEAT', 'REPEAT');
+
+
     //Initialize scene objects
     this.axis = new CGFaxis(this, 20, 1);
     this.plane = new MyPlane(this, 64);
@@ -239,11 +250,29 @@ export class MyScene extends CGFscene {
     this.loadIdentity();
     this.applyViewMatrix();
 
+    this.lights[0].update();
+    this.lights[1].update();
+    this.lights[2].update();
+    this.lights[3].update();
+    this.lights[4].update();
+    this.lights[5].update();
+    this.lights[6].update();
+    this.lights[7].update();
+
     // Draw axis
-    //this.axis.display();
+    // this.axis.display();
     this.helicopter.display();
     this.setDefaultAppearance();
     this.panorama.display();
+
+    // Draw the ground
+    this.pushMatrix();
+    this.translate(-150, -30, -150); // Move the ground to the front of the building
+    this.rotate(-Math.PI / 2, 1, 0, 0); // Rotate to align with the XZ plane
+    this.scale(400, 400, 1); // Scale to 400x400
+    this.grassMaterial.apply(); // Apply grass material
+    this.plane.display();
+    this.popMatrix();
 
     // Renderizar o lago
     this.pushMatrix();
@@ -266,5 +295,6 @@ export class MyScene extends CGFscene {
     this.translate(-200, -30, -180);
     this.forest.display();
     this.popMatrix();
+
   }
 }
