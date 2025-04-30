@@ -424,8 +424,8 @@ export class MyHeli extends CGFobject {
 
         // Material para luz vermelha
         const redLight = new CGFappearance(this.scene);
-        redLight.setAmbient(0.8, 0.0, 0.0, 1.0);
-        redLight.setDiffuse(1.0, 0.0, 0.0, 1.0);
+        redLight.setAmbient(this.redLightActive ? 1.0 : 0.2, 0.0, 0.0, 1.0);
+        redLight.setDiffuse(this.redLightActive ? 1.0 : 0.2, 0.0, 0.0, 1.0);
         redLight.setSpecular(1.0, 0.2, 0.2, 1.0);
         redLight.setShininess(200);
         redLight.apply();
@@ -439,8 +439,8 @@ export class MyHeli extends CGFobject {
 
         // Material para luz verde
         const greenLight = new CGFappearance(this.scene);
-        greenLight.setAmbient(0.0, 0.8, 0.0, 1.0);
-        greenLight.setDiffuse(0.0, 1.0, 0.0, 1.0);
+        greenLight.setAmbient(0.0, this.greenLightActive ? 1.0 : 0.2, 0.0, 1.0);
+        greenLight.setDiffuse(0.0, this.greenLightActive ? 1.0 : 0.2, 0.0, 1.0);
         greenLight.setSpecular(0.2, 1.0, 0.2, 1.0);
         greenLight.setShininess(200);
         greenLight.apply();
