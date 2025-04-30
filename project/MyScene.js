@@ -6,6 +6,8 @@ import { MyBuilding } from "./MyBuilding.js";
 import { MyTree } from "./MyTree.js";
 import { MyForest } from "./MyForest.js";
 import { MyHeli } from "./MyHeli.js";
+import {MyLake} from "./MyLake.js";
+import {MyFire} from "./MyFire.js";
 
 /**
  * MyScene
@@ -16,6 +18,7 @@ export class MyScene extends CGFscene {
     super();
     this.time = 0;
   }
+
   init(application) {
     super.init(application);
 
@@ -84,12 +87,8 @@ export class MyScene extends CGFscene {
     this.trunkTexture = new CGFtexture(this, 'textures/trunk.jpg');
     this.crownTexture = new CGFtexture(this, 'textures/leaves.jpg');
     
-    // Create example trees with different parameters and textures
-    
-    // Create a forest with rows and columns
     this.forest = new MyForest(this, 5, 4, 80, 60, this.trunkTexture, this.crownTexture);
   
-
     this.heliCabinTexture = new CGFtexture(this, 'textures/heli_body.jpg');
     this.heliTailTexture = new CGFtexture(this, 'textures/heli_tail.jpg');
     this.heliBladeTexture = new CGFtexture(this, 'textures/heli_blade.jpg');
@@ -103,16 +102,36 @@ export class MyScene extends CGFscene {
         this.heliBucketTexture
     );
     
-    
     this.helicopter.x = -150; 
-    this.helicopter.y = -13;    
+    this.helicopter.y = -12;    
     this.helicopter.z = -250; 
     this.helicopter.state = 'flying';
     this.helicopter.bucketDeployed = true;
     this.helicopter.bladeSpeed = this.helicopter.maxBladeSpeed*0.1;
     
     this.speedFactor = 1.0;
+
+    this.waterTexture = new CGFtexture(this, 'textures/water.jpg');
+    this.fireTexture = new CGFtexture(this, 'textures/fire.jpg');
+    this.burntGroundTexture = new CGFtexture(this, 'textures/burnt_ground.jpg');
+    
+    // Criar lago na cena
+    this.lake = new MyLake(this, 40, 35, 'textures/water.jpg');
+    this.lake.x = -280;
+    this.lake.y = -29.5; 
+    this.lake.z = -230;
+    
+    // Criar fogo na floresta
+    this.fire = new MyFire(this, 15, 8, 20);
+    this.fire.x = -220;
+    this.fire.y = -29;
+    this.fire.z = -160;
+    
+    // Adicionar referências ao helicóptero
+    this.helicopter.lake = this.lake;
+    this.helicopter.fire = this.fire;
   }
+
   initLights() {
     // Luz direcional geral 
     this.lights[0].setPosition(0, 100, 0, 1);
@@ -130,20 +149,19 @@ export class MyScene extends CGFscene {
     
     this.lights[0].update();
     this.lights[1].update();
-}
+  }
+
   initCameras() {
+    // Câmera estática única
     this.camera = new CGFcamera(
       0.8,
       0.1,
       1000,
-      vec3.fromValues(-100, 20, -100), 
-      vec3.fromValues(-150, 10, -150)  
+      vec3.fromValues(-150, -25, -200), // position
+      vec3.fromValues(-150, -25, -250)  // target
     );
-    this.cameraMode = 'follow'; // 'follow' or 'static'
-    this.cameraDistance = 20;   // Distance behind helicopter
-    this.cameraHeight = 8;      // Height above helicopter
-    this.cameraSmoothness = 0.1;
   }
+
   checkKeys() {
     var text = "Keys pressed: ";
     var keysPressed = false;
@@ -166,31 +184,31 @@ export class MyScene extends CGFscene {
         keysPressed = true;
     }
     
-    // desaparece
     if (this.gui.isKeyPressed("KeyR")) {
         this.helicopter.reset();
     }
 
-    //take off
+    if (this.gui.isKeyPressed("KeyL")) {
+      this.helicopter.land();
+    }
+    
     if (this.gui.isKeyPressed("KeyP")) {
         this.helicopter.takeOff();
     }
     
+    if (this.gui.isKeyPressed("KeyO")) {
+        if (!this.oKeyPressed) {
+            this.helicopter.dropWater();
+            this.oKeyPressed = true;
+        }
+      }
     //landing
     if (this.gui.isKeyPressed("KeyL")) {
         this.helicopter.land();
         keysPressed = true;
     }
 
-    // Camera lock
-    if (this.gui.isKeyPressed("KeyC")) {
-      if (!this.cKeyPressed) {
-          this.toggleCameraMode();
-          this.cKeyPressed = true;
-      }
-    } else {
-        this.cKeyPressed = false;
-    }
+    
 
     // Reset lights if no keys are pressed
     if (!keysPressed) {
@@ -212,51 +230,11 @@ export class MyScene extends CGFscene {
     
     this.checkKeys();
     this.time = t;
+    this.lake.update(t);
+    this.fire.update(t);
     
     this.helicopter.update(t, deltaT);
-    
-    // Update camera to follow helicopter if in follow mode
-    if (this.cameraMode === 'follow') {
-      this.updateCameraPosition();
-    }
   }
-  updateCameraPosition() {
-    // Calculate position behind helicopter based on orientation
-    const dx = -Math.sin(this.helicopter.orientation) * this.cameraDistance;
-    const dz = -Math.cos(this.helicopter.orientation) * this.cameraDistance;
-    
-    // Calculate target camera position
-    const targetX = this.helicopter.x + dx;
-    const targetY = this.helicopter.y + this.cameraHeight;
-    const targetZ = this.helicopter.z + dz;
-    
-    // Get current camera position
-    const currentPos = this.camera.position;
-    
-    // Smoothly interpolate between current and target positions
-    const newX = currentPos[0] * (1 - this.cameraSmoothness) + targetX * this.cameraSmoothness;
-    const newY = currentPos[1] * (1 - this.cameraSmoothness) + targetY * this.cameraSmoothness;
-    const newZ = currentPos[2] * (1 - this.cameraSmoothness) + targetZ * this.cameraSmoothness;
-    
-    // Update camera position
-    this.camera.position = vec3.fromValues(newX, newY, newZ);
-    
-    // Set target to helicopter position
-    this.camera.target = vec3.fromValues(this.helicopter.x, this.helicopter.y, this.helicopter.z);
-  }
-  toggleCameraMode() {
-    if (this.cameraMode === 'follow') {
-      this.cameraMode = 'static';
-      // Reset to original static camera position
-      this.camera.position = vec3.fromValues(-150, -25, -200);
-      this.camera.target = vec3.fromValues(-150, -25, -250);
-    } else {
-      this.cameraMode = 'follow';
-      this.updateCameraPosition();
-    }
-  }
-
-  
 
   setDefaultAppearance() {
     this.setAmbient(0.5, 0.5, 0.5, 1.0);
@@ -264,8 +242,8 @@ export class MyScene extends CGFscene {
     this.setSpecular(0.5, 0.5, 0.5, 1.0);
     this.setShininess(10.0);
   }
-  display() {
 
+  display() {
     this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     this.updateProjectionMatrix();
@@ -296,11 +274,19 @@ export class MyScene extends CGFscene {
     this.plane.display();
     this.popMatrix();
 
-    // Position the building at an edge of the ground
+    // Renderizar o lago
+    this.pushMatrix();
+    this.lake.display();
+    this.popMatrix();
+    
+    // Renderizar o fogo na floresta
+    this.pushMatrix();
+    this.translate(this.fire.x, this.fire.y, this.fire.z);
+    this.fire.display();
+    this.popMatrix();
+    
     this.pushMatrix();
     this.translate(-150, -30, -250);
-    
-    
     this.fireStation.display();
     this.popMatrix();
 
@@ -309,6 +295,6 @@ export class MyScene extends CGFscene {
     this.translate(-200, -30, -180);
     this.forest.display();
     this.popMatrix();
-}
 
+  }
 }

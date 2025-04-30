@@ -37,7 +37,7 @@ export class MyHeli extends CGFobject {
         this.maxPitchAngle = Math.PI/12;
         
         // Parâmetros de movimento
-        this.cruisingAltitude = 15;
+        this.cruisingAltitude = -12;
         this.currentAltitude = 0;
         this.verticalSpeed = 0;
         this.maxVerticalSpeed = 0.1;
@@ -46,9 +46,33 @@ export class MyHeli extends CGFobject {
         this.bucketDeployed = true;
         this.bucketFilled = false;
         this.bucketPosition = [0, -2, 0];
+        this.waterDropHeight = 0; // Para animar a queda da água
+        this.isWaterDropping = false;
+        this.waterDropTime = 0;
+        this.waterDropDuration = 2000; // 2 segundos para queda da água
+        
+        // Referência para objetos da cena para interação
+        this.lake = null;
+        this.fire = null;
         
         this.initComponents();
         this.createMaterials();
+    }
+    isOverLake() {
+        if (!this.lake) return false;
+        return this.lake.isOverLake(this.x, this.z);
+    }
+    
+    // Adicione este método para verificar se o helicóptero está sobre o fogo
+    isOverFire() {
+        if (!this.fire) return false;
+        
+        // Verificar se está na proximidade do fogo (ajuste conforme necessário)
+        const dx = this.x - this.fire.x;
+        const dz = this.z - this.fire.z;
+        const distance = Math.sqrt(dx*dx + dz*dz);
+        
+        return distance < this.fire.baseRadius * 1.2;
     }
     
     initComponents() {
@@ -137,79 +161,109 @@ export class MyHeli extends CGFobject {
     }
     
     update(t, deltaT) {
+        // Atualizar rotação das hélices
         this.bladeRotation = (this.bladeRotation + this.bladeSpeed * deltaT / 50) % (2 * Math.PI);
         
+        if (this.state !== 'landed') {
+            this.bladeSpeed = Math.min(this.bladeSpeed + 0.01, this.maxBladeSpeed);
+        } else {
+            this.bladeSpeed = Math.max(0, this.bladeSpeed - 0.01);
+        }
+        
+        // Implementar movimento conforme o estado
         if (this.state === 'flying') {
             this.x += this.velocity[0] * deltaT / 50;
             this.z += this.velocity[2] * deltaT / 50;
             
-            const targetPitch = -this.maxPitchAngle * (this.velocity[2] / 0.3);
+            // Ajustar inclinação com base na velocidade
+            const speed = Math.sqrt(this.velocity[0] * this.velocity[0] + this.velocity[2] * this.velocity[2]);
+            const targetPitch = -this.maxPitchAngle * (speed / 0.3); 
+            this.pitchAngle = 0.9 * this.pitchAngle + 0.1 * targetPitch;
             
-            this.pitchAngle = this.pitchAngle * 0.9 + targetPitch * 0.1;
+   
         } 
-        // Transições de estado
         else if (this.state === 'taking_off') {
-            if (this.bladeSpeed < this.maxBladeSpeed) {
-                this.bladeSpeed += 0.05;
+            // Acelerar as hélices
+            if (this.bladeSpeed < this.maxBladeSpeed * 0.9) {
+                return;
+            }
+            
+            // Subir até altitude de cruzeiro
+            if (this.y < this.cruisingAltitude) {
+                this.y += 0.1 * deltaT / 50;
             } else {
-                this.verticalSpeed = this.maxVerticalSpeed;
-                this.y += this.verticalSpeed * deltaT / 50;
-                
-                if (this.y > this.cruisingAltitude * 0.3 && !this.bucketDeployed) {
-                    this.bucketDeployed = true;
-                }
-                
-                if (this.y >= this.cruisingAltitude) {
-                    this.y = this.cruisingAltitude;
-                    this.state = 'flying';
-                    this.verticalSpeed = 0;
-                }
+                this.state = 'flying';
             }
         }
         else if (this.state === 'landing') {
+            // Desacelerar
+            this.velocity = [0, 0, 0];
+            
+            // Descer lentamente
             if (this.y > 0) {
-                this.verticalSpeed = -this.maxVerticalSpeed;
-                this.y += this.verticalSpeed * deltaT / 50;
-                
-
-                if (this.y < this.cruisingAltitude * 0.3 && this.bucketDeployed) {
-                    this.bucketDeployed = false;
-                }
-                
-                if (this.y <= 0) {
-                    this.y = 0;
-                    this.verticalSpeed = 0;
-                }
+                this.y -= 0.1 * deltaT / 50;
             } else {
-                if (this.bladeSpeed > 0) {
-                    this.bladeSpeed -= 0.02;
-                } else {
-                    this.bladeSpeed = 0;
-                    this.state = 'landed';
-                    
-                    this.pitchAngle = 0;
-                }
+                // Tocou o solo
+                this.y = 0;
+                this.state = 'landed';
             }
+            
+            this.pitchAngle *= 0.9; 
         }
         else if (this.state === 'filling_bucket') {
-
-            if (this.y > 2) {
-                this.verticalSpeed = -this.maxVerticalSpeed / 2;
-                this.y += this.verticalSpeed * deltaT / 50;
+            // Desacelerar totalmente
+            this.velocity = [0, 0, 0];
+            
+            // Descer lentamente até o nível da água
+            if (this.y > -25) {
+                this.y -= 0.1 * deltaT / 50;
             } else {
-
-                if (!this.bucketFilled) {
-                    if (!this.fillStartTime) {
-                        this.fillStartTime = t;
-                    }
-                    
-                    if (t - this.fillStartTime > 3000) {
-                        this.bucketFilled = true;
-                        this.fillStartTime = null;
-                        
-                        this.state = 'taking_off';
-                    }
-                }
+                // Chegou próximo à água
+                this.y = -25; 
+                this.bucketFilled = true;
+                this.state = 'taking_off'; 
+            }
+        }
+        else if (this.state === 'dropping_water') {
+            // Desacelerar
+            this.velocity = [0, 0, 0];
+            
+            // Temporizador para simulação da queda da água
+            if (!this.waterDropTime) {
+                this.waterDropTime = t;
+            }
+            
+            // Calcular progresso da animação
+            const elapsed = t - this.waterDropTime;
+            const progress = Math.min(elapsed / this.waterDropDuration, 1.0);
+            
+            // Animar queda da água
+            this.waterDropHeight = progress * 20; 
+            this.isWaterDropping = true;
+            
+            if (progress >= 0.5 && this.fire && this.fire.active) {
+                this.fire.extinguish();
+            }
+            
+            // Finalizar o estado de queda
+            if (progress >= 1.0) {
+                this.isWaterDropping = false;
+                this.bucketFilled = false;
+                this.waterDropTime = 0;
+                this.state = 'flying';
+            }
+        }
+    }
+    
+    
+    
+    
+    dropWater() {
+        if (this.state === 'flying' && this.bucketFilled) {
+            if (this.isOverFire()) {
+                this.state = 'dropping_water';
+                this.isWaterDropping = true;
+                this.waterDropTime = 0;
             }
         }
     }
@@ -238,6 +292,7 @@ export class MyHeli extends CGFobject {
             }
         }
     }
+
     
     accelerate(v) {
         if (this.state === 'flying') {
@@ -258,66 +313,66 @@ export class MyHeli extends CGFobject {
             }
         }
     }
+
     
     takeOff() {
-        if (this.state === 'landed') {
-            this.state = 'taking_off';
-        } else if (this.state === 'filling_bucket' && this.bucketFilled) {
+        if (this.state === 'landed' || this.state === 'filling_bucket') {
             this.state = 'taking_off';
         }
     }
     
+    /**
+     * Inicia o pouso do helicóptero ou a coleta de água do lago
+     */
     land() {
         if (this.state === 'flying') {
-            const distanceToHeliport = Math.sqrt(
-                Math.pow(this.x - (-150), 2) + 
-                Math.pow(this.z - (-150), 2)
-            );
-            
-            const isOverHeliport = distanceToHeliport < 20;
-            
-            if (isOverHeliport) {
-                this.state = 'landing';
-                this.velocity = [0, 0, 0]; 
-                return;
-            }
-            
-            // Verifica se está sobre uma região específica com limites em X e Z
-            const minX = -220;
-            const maxX = -180;
-            const minZ = -120;
-            const maxZ = -80;
-            const minHeight = 16;
-            
-            const isInLakeRegion = (
-                this.x >= minX && 
-                this.x <= maxX && 
-                this.z >= minZ && 
-                this.z <= maxZ && 
-                this.y >= minHeight
-            );
-            
-            if (isInLakeRegion && !this.bucketFilled) {
-                console.log("Descendo para encher o balde na área do lago");
-                this.state = 'filling_bucket';
-                this.velocity = [0, 0, 0];
-                return;
-            }
-            
+            // Se estiver sobre o lago e o balde não estiver cheio, encher o balde
+            if (this.isOverLake()) {
+                if (!this.bucketFilled) {
+                    this.state = 'filling_bucket';
+                    this.velocity = [0, 0, 0]; 
+                } else {
+                    console.log("O balde já está cheio!");
+                }
+            } 
         }
     }
-    
+
+    /**
+     * Verifica se o helicóptero está sobre o lago
+     * @returns {Boolean} - true se o helicóptero estiver sobre o lago
+     */
+    isOverLake() {
+        if (!this.lake) return false;
+        return this.lake.isOverLake(this.x, this.z);
+    }
+
+    /**
+     * Verifica se o helicóptero está sobre o fogo
+     * @returns {Boolean} - true se o helicóptero estiver sobre o fogo
+     */
+    isOverFire() {
+        if (!this.fire) return false;
+        
+        // Verificar se está na proximidade do fogo
+        const dx = this.x - this.fire.x;
+        const dz = this.z - this.fire.z;
+        const distance = Math.sqrt(dx*dx + dz*dz);
+        
+        return distance < this.fire.baseRadius * 1.2;
+    }
+        
     reset() {
         this.x = -150;  
-        this.y = 0;
-        this.z = -150;  
+        this.y = -12;
+        this.z = -250;  
         this.orientation = 0;
         this.velocity = [0, 0, 0];
-        this.state = 'landed';
+        this.state = 'flying';
         this.bladeRotation = 0;
         this.bladeSpeed = 0;
         this.pitchAngle = 0;
-        this.bucketDeployed = false;
+        this.bucketDeployed = true;
         this.bucketFilled = false;
         this.fillStartTime = null;
         
@@ -621,20 +676,51 @@ export class MyHeli extends CGFobject {
             this.scene.rotate(Math.PI/2, 1, 0, 0);
             
             if (this.bucketFilled) {
-                this.waterMaterial.apply();
-            } else {
-                // Balde vazio - cor vermelha de bombeiro
-                const bucketColor = new CGFappearance(this.scene);
-                bucketColor.setAmbient(0.7, 0.2, 0.2, 1.0);
-                bucketColor.setDiffuse(0.8, 0.2, 0.2, 1.0);
-                bucketColor.setSpecular(0.4, 0.3, 0.3, 1.0);
-                bucketColor.setShininess(50);
+                this.scene.pushMatrix();
+                this.scene.translate(0, 0.4, 0); // Posição do nível da água
+                this.scene.scale(0.75, 0.1, 0.75); // Um pouco menor que o interior
+                this.scene.rotate(Math.PI/2, 1, 0, 0);
                 
-                if (this.bucketTexture) {
-                    bucketColor.setTexture(this.bucketTexture);
+                // Material para a água (azul transparente)
+                this.waterMaterial.apply();
+                
+                this.bucketBase.display();
+                this.scene.popMatrix();
+            }
+            
+            // Se estiver despejando água, mostrar a animação
+            if (this.isWaterDropping) {
+                this.scene.pushMatrix();
+                
+                // Configurar transparência para água caindo
+                this.scene.gl.enable(this.scene.gl.BLEND);
+                this.scene.gl.blendFunc(this.scene.gl.SRC_ALPHA, this.scene.gl.ONE_MINUS_SRC_ALPHA);
+                
+                // Material da água
+                this.waterMaterial.apply();
+                
+                // Desenhar "coluna" de água caindo
+                this.scene.pushMatrix();
+                this.scene.translate(0, -4.5 - this.waterDropHeight/2, 0);
+                this.scene.scale(0.7, this.waterDropHeight, 0.7);
+                this.scene.rotate(Math.PI/2, 1, 0, 0);
+                this.bucketBase.display(); // Usar cilindro como coluna de água
+                this.scene.popMatrix();
+                
+                // Desenhar "splash" no final da coluna de água
+                if (this.waterDropHeight > 10) {
+                    const splashScale = (this.waterDropHeight - 10) / 10;
+                    this.scene.pushMatrix();
+                    this.scene.translate(0, -4.5 - this.waterDropHeight, 0);
+                    this.scene.scale(2 * splashScale, 0.1, 2 * splashScale);
+                    this.scene.rotate(Math.PI/2, 1, 0, 0);
+                    this.bucketBase.display();
+                    this.scene.popMatrix();
                 }
                 
-                bucketColor.apply();
+                this.scene.gl.disable(this.scene.gl.BLEND);
+                
+                this.scene.popMatrix();
             }
             
             this.bucketBase.display();
