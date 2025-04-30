@@ -287,26 +287,58 @@ export class MyTree extends CGFobject {
     display() {
         this.scene.pushMatrix();
     
-        // Draw the trunk (always vertical)
+        // Configuração do tronco
         this.trunkMaterial.apply();
         this.scene.pushMatrix();
-        this.scene.rotate(-Math.PI / 2, 1, 0, 0); 
-        this.scene.scale(this.trunkRadius * 0.7, this.trunkRadius*0.7, this.trunkHeight);
+        
+        // Ângulo de inclinação para o tronco
+        let trunkTiltAngle = this.tiltAngle * 0.8; 
+        
+        let topOffsetX = 0;
+        let topOffsetZ = 0;
+        
+        if (this.tiltAxis === 'X') {
+            topOffsetZ = Math.sin(trunkTiltAngle) * this.trunkHeight;
+        } else if (this.tiltAxis === 'Z') {
+            topOffsetX = Math.sin(trunkTiltAngle) * this.trunkHeight;
+        }
+        
+        // Primeiro, rotacionamos para orientação vertical do cilindro
+        this.scene.rotate(-Math.PI / 2, 1, 0, 0);
+        
+
+        const shearMatrix = [
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            this.tiltAxis === 'Z' ? topOffsetX/this.trunkHeight : 0, 
+            this.tiltAxis === 'X' ? topOffsetZ/this.trunkHeight : 0, 
+            1, 0,
+            0, 0, 0, 1
+        ];
+        
+        this.scene.multMatrix(shearMatrix);
+        
+        // Escalar para dimensões do tronco
+        this.scene.scale(this.trunkRadius, this.trunkRadius, this.trunkHeight);
+        
         this.trunk.display();
         this.scene.popMatrix();
     
-        // Apply tilt to the crown only
+        // Aplicar tilt à copa da árvore
         this.scene.pushMatrix();
+        
+        // Posicionar corretamente a copa no topo do tronco inclinado
         if (this.tiltAxis === 'X') {
+            this.scene.translate(0, this.trunkHeight, -topOffsetZ);
             this.scene.rotate(this.tiltAngle, 1, 0, 0);
         } else if (this.tiltAxis === 'Z') {
+            this.scene.translate(topOffsetX, this.trunkHeight, 0);
             this.scene.rotate(this.tiltAngle, 0, 0, 1);
         }
     
         // Draw the crown
         this.crownMaterial.apply();
-        this.scene.translate(0, this.trunkHeight, 0); 
-    
+        
         const layerHeight = this.crownHeight / this.numLayers;
         let currentRadius = this.trunkRadius * 3;
     
@@ -325,7 +357,7 @@ export class MyTree extends CGFobject {
             currentRadius *= 0.88;
         }
     
-        this.scene.popMatrix(); 
+        this.scene.popMatrix();
         this.scene.popMatrix();
     }
 }
