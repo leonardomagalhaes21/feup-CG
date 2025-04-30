@@ -216,14 +216,26 @@ export class MyHeli extends CGFobject {
     
     turn(v) {
         if (this.state === 'flying') {
-            // Atualizar a orientação
+            // Update orientation
             this.orientation += v;
-            
             this.orientation = this.orientation % (2 * Math.PI);
-            
+    
             const speed = Math.sqrt(this.velocity[0] * this.velocity[0] + this.velocity[2] * this.velocity[2]);
             this.velocity[0] = Math.sin(this.orientation) * speed;
             this.velocity[2] = Math.cos(this.orientation) * speed;
+    
+            // Activate red light when turning left, green light when turning right
+            if (v < 0) {
+                this.redLightActive = false;
+                this.greenLightActive = true;
+            } else if (v > 0) {
+                this.redLightActive = true;
+                this.greenLightActive = false;
+            }
+            else {
+                this.redLightActive = false;
+                this.greenLightActive = false;
+            }
         }
     }
     
@@ -353,8 +365,8 @@ export class MyHeli extends CGFobject {
 
         // Material para luz vermelha
         const redLight = new CGFappearance(this.scene);
-        redLight.setAmbient(0.8, 0.0, 0.0, 1.0);
-        redLight.setDiffuse(1.0, 0.0, 0.0, 1.0);
+        redLight.setAmbient(this.redLightActive ? 1.0 : 0.2, 0.0, 0.0, 1.0);
+        redLight.setDiffuse(this.redLightActive ? 1.0 : 0.2, 0.0, 0.0, 1.0);
         redLight.setSpecular(1.0, 0.2, 0.2, 1.0);
         redLight.setShininess(200);
         redLight.apply();
@@ -368,8 +380,8 @@ export class MyHeli extends CGFobject {
 
         // Material para luz verde
         const greenLight = new CGFappearance(this.scene);
-        greenLight.setAmbient(0.0, 0.8, 0.0, 1.0);
-        greenLight.setDiffuse(0.0, 1.0, 0.0, 1.0);
+        greenLight.setAmbient(0.0, this.greenLightActive ? 1.0 : 0.2, 0.0, 1.0);
+        greenLight.setDiffuse(0.0, this.greenLightActive ? 1.0 : 0.2, 0.0, 1.0);
         greenLight.setSpecular(0.2, 1.0, 0.2, 1.0);
         greenLight.setShininess(200);
         greenLight.apply();

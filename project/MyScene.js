@@ -147,10 +147,12 @@ export class MyScene extends CGFscene {
     
     if (this.gui.isKeyPressed("KeyA")) {
         this.helicopter.turn(0.05 * this.speedFactor);
+        keysPressed = true;
     }
     
     if (this.gui.isKeyPressed("KeyD")) {
         this.helicopter.turn(-0.05 * this.speedFactor);
+        keysPressed = true;
     }
     
     // desaparece
@@ -166,6 +168,7 @@ export class MyScene extends CGFscene {
     //landing
     if (this.gui.isKeyPressed("KeyL")) {
         this.helicopter.land();
+        keysPressed = true;
     }
 
     // Camera lock
@@ -176,6 +179,12 @@ export class MyScene extends CGFscene {
       }
     } else {
         this.cKeyPressed = false;
+    }
+
+    // Reset lights if no keys are pressed
+    if (!keysPressed) {
+        this.helicopter.redLightActive = false;
+        this.helicopter.greenLightActive = false;
     }
   }
 
