@@ -37,7 +37,7 @@ export class MyHeli extends CGFobject {
         this.maxPitchAngle = Math.PI/12;
         
         // Parâmetros de movimento
-        this.cruisingAltitude = 15;
+        this.cruisingAltitude = -12;
         this.currentAltitude = 0;
         this.verticalSpeed = 0;
         this.maxVerticalSpeed = 0.1;
@@ -215,11 +215,11 @@ export class MyHeli extends CGFobject {
             this.velocity = [0, 0, 0];
             
             // Descer lentamente até o nível da água
-            if (this.y > 2) {
+            if (this.y > -25) {
                 this.y -= 0.1 * deltaT / 50;
             } else {
                 // Chegou próximo à água
-                this.y = 2; 
+                this.y = -25; 
                 this.bucketFilled = true;
                 this.state = 'taking_off'; 
             }
@@ -251,7 +251,6 @@ export class MyHeli extends CGFobject {
                 this.bucketFilled = false;
                 this.waterDropTime = 0;
                 this.state = 'flying';
-                console.log("Água despejada com sucesso");
             }
         }
     }
@@ -260,13 +259,12 @@ export class MyHeli extends CGFobject {
     
     
     dropWater() {
-        if (this.state === 'flying' && this.bucketFilled && this.isOverFire()) {
-            this.state = 'dropping_water';
-            this.isWaterDropping = true;
-            this.waterDropTime = 0;
-            console.log("Iniciando lançamento de água");
-        } else {
-            console.log("Não é possível lançar água: balde vazio ou fora do alvo");
+        if (this.state === 'flying' && this.bucketFilled) {
+            if (this.isOverFire()) {
+                this.state = 'dropping_water';
+                this.isWaterDropping = true;
+                this.waterDropTime = 0;
+            }
         }
     }
     
@@ -318,65 +316,63 @@ export class MyHeli extends CGFobject {
 
     
     takeOff() {
-        if (this.state === 'landed') {
-            this.state = 'taking_off';
-        } else if (this.state === 'filling_bucket' && this.bucketFilled) {
+        if (this.state === 'landed' || this.state === 'filling_bucket') {
             this.state = 'taking_off';
         }
     }
     
+    /**
+     * Inicia o pouso do helicóptero ou a coleta de água do lago
+     */
     land() {
         if (this.state === 'flying') {
-            if (this.isOverLake() && !this.bucketFilled) {
-                this.state = 'filling_bucket';
-                this.velocity = [0, 0, 0];
-                return;
-            }
-            
-            const isOverHeliport = distanceToHeliport < 20;
-            
-            if (isOverHeliport) {
-                this.state = 'landing';
-                this.velocity = [0, 0, 0]; 
-                return;
-            }
-            
-            // Verifica se está sobre uma região específica com limites em X e Z
-            const minX = -220;
-            const maxX = -180;
-            const minZ = -120;
-            const maxZ = -80;
-            const minHeight = 16;
-            
-            const isInLakeRegion = (
-                this.x >= minX && 
-                this.x <= maxX && 
-                this.z >= minZ && 
-                this.z <= maxZ && 
-                this.y >= minHeight
-            );
-            
-            if (isInLakeRegion && !this.bucketFilled) {
-                console.log("Descendo para encher o balde na área do lago");
-                this.state = 'filling_bucket';
-                this.velocity = [0, 0, 0];
-                return;
-            }
-            
+            // Se estiver sobre o lago e o balde não estiver cheio, encher o balde
+            if (this.isOverLake()) {
+                if (!this.bucketFilled) {
+                    this.state = 'filling_bucket';
+                    this.velocity = [0, 0, 0]; 
+                } else {
+                    console.log("O balde já está cheio!");
+                }
+            } 
         }
     }
-    
+
+    /**
+     * Verifica se o helicóptero está sobre o lago
+     * @returns {Boolean} - true se o helicóptero estiver sobre o lago
+     */
+    isOverLake() {
+        if (!this.lake) return false;
+        return this.lake.isOverLake(this.x, this.z);
+    }
+
+    /**
+     * Verifica se o helicóptero está sobre o fogo
+     * @returns {Boolean} - true se o helicóptero estiver sobre o fogo
+     */
+    isOverFire() {
+        if (!this.fire) return false;
+        
+        // Verificar se está na proximidade do fogo
+        const dx = this.x - this.fire.x;
+        const dz = this.z - this.fire.z;
+        const distance = Math.sqrt(dx*dx + dz*dz);
+        
+        return distance < this.fire.baseRadius * 1.2;
+    }
+        
     reset() {
         this.x = -150;  
-        this.y = 0;
-        this.z = -150;  
+        this.y = -12;
+        this.z = -250;  
         this.orientation = 0;
         this.velocity = [0, 0, 0];
-        this.state = 'landed';
+        this.state = 'flying';
         this.bladeRotation = 0;
         this.bladeSpeed = 0;
         this.pitchAngle = 0;
-        this.bucketDeployed = false;
+        this.bucketDeployed = true;
         this.bucketFilled = false;
         this.fillStartTime = null;
         

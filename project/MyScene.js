@@ -92,7 +92,7 @@ export class MyScene extends CGFscene {
     );
     
     this.helicopter.x = -150; 
-    this.helicopter.y = -13;    
+    this.helicopter.y = -12;    
     this.helicopter.z = -250; 
     this.helicopter.state = 'flying';
     this.helicopter.bucketDeployed = true;
@@ -190,21 +190,14 @@ export class MyScene extends CGFscene {
             this.helicopter.dropWater();
             this.oKeyPressed = true;
         }
+      }
     //landing
     if (this.gui.isKeyPressed("KeyL")) {
         this.helicopter.land();
         keysPressed = true;
     }
 
-    // Camera lock
-    if (this.gui.isKeyPressed("KeyC")) {
-      if (!this.cKeyPressed) {
-          this.toggleCameraMode();
-          this.cKeyPressed = true;
-      }
-    } else {
-        this.oKeyPressed = false;
-    }
+    
 
     // Reset lights if no keys are pressed
     if (!keysPressed) {
