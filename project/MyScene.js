@@ -17,10 +17,17 @@ export class MyScene extends CGFscene {
   constructor() {
     super();
     this.time = 0;
+
+    this.cameraMode = 'static';
+    this.cameraDistance = 30;
+    this.cameraHeight = 15;
+    this.cameraSmoothness = 0.1; 
   }
 
   init(application) {
     super.init(application);
+
+    
 
     this.initCameras();
     this.initLights();
@@ -130,6 +137,9 @@ export class MyScene extends CGFscene {
     // Adicionar referências ao helicóptero
     this.helicopter.lake = this.lake;
     this.helicopter.fire = this.fire;
+
+   
+
   }
 
   initLights() {
@@ -152,14 +162,69 @@ export class MyScene extends CGFscene {
   }
 
   initCameras() {
-    // Câmera estática única
     this.camera = new CGFcamera(
       0.8,
       0.1,
       1000,
-      vec3.fromValues(-150, -25, -200), // position
-      vec3.fromValues(-150, -25, -250)  // target
+      vec3.fromValues(-150, -25, -200),
+      vec3.fromValues(-150, -25, -250)
     );
+    
+    this.staticCameraPosition = vec3.clone(this.camera.position);
+    this.staticCameraTarget = vec3.clone(this.camera.target);
+  }
+
+
+  /**
+   * Alterna entre modo de câmera estática e câmera que segue o helicóptero
+   */
+  toggleCameraMode() {
+    if (this.cameraMode === 'static') {
+      // Mudar para câmera que segue o helicóptero
+      this.cameraMode = 'follow';
+    } else {
+      // Voltar para câmera estática
+      this.cameraMode = 'static';
+      
+      // Restaurar posição e alvo originais da câmera
+      vec3.copy(this.camera.position, this.staticCameraPosition);
+      vec3.copy(this.camera.target, this.staticCameraTarget);
+      
+    }
+  }
+
+  /**
+   * Atualiza a posição da câmera para seguir o helicóptero
+   */
+  updateCameraPosition() {
+    if (this.cameraMode !== 'follow') return;
+
+    // Calcular nova posição da câmera atrás do helicóptero
+    const dx = -Math.sin(this.helicopter.orientation) * this.cameraDistance;
+    const dz = -Math.cos(this.helicopter.orientation) * this.cameraDistance;
+    
+    // Posição desejada da câmera
+    const targetPosition = [
+      this.helicopter.x + dx,
+      this.helicopter.y + this.cameraHeight,
+      this.helicopter.z + dz
+    ];
+    
+    // Alvo da câmera (posição do helicóptero com ligeira compensação para a altura)
+    const targetLookAt = [
+      this.helicopter.x,
+      this.helicopter.y + this.cameraHeight * 0.3,
+      this.helicopter.z
+    ];
+    
+    // Suavizar a transição
+    this.camera.position[0] = this.camera.position[0] * (1 - this.cameraSmoothness) + targetPosition[0] * this.cameraSmoothness;
+    this.camera.position[1] = this.camera.position[1] * (1 - this.cameraSmoothness) + targetPosition[1] * this.cameraSmoothness;
+    this.camera.position[2] = this.camera.position[2] * (1 - this.cameraSmoothness) + targetPosition[2] * this.cameraSmoothness;
+    
+    this.camera.target[0] = this.camera.target[0] * (1 - this.cameraSmoothness) + targetLookAt[0] * this.cameraSmoothness;
+    this.camera.target[1] = this.camera.target[1] * (1 - this.cameraSmoothness) + targetLookAt[1] * this.cameraSmoothness;
+    this.camera.target[2] = this.camera.target[2] * (1 - this.cameraSmoothness) + targetLookAt[2] * this.cameraSmoothness;
   }
 
   checkKeys() {
@@ -202,6 +267,15 @@ export class MyScene extends CGFscene {
             this.oKeyPressed = true;
         }
       }
+    if (this.gui.isKeyPressed("KeyC")) {
+      if (!this.cKeyPressed) {
+        this.toggleCameraMode();
+        this.cKeyPressed = true;
+        keysPressed = true;
+      }
+    } else {
+      this.cKeyPressed = false;
+    }
     //landing
     if (this.gui.isKeyPressed("KeyL")) {
         this.helicopter.land();
@@ -218,10 +292,9 @@ export class MyScene extends CGFscene {
   }
 
   update(t) {
-    // Calcular delta time de forma mais robusta
     if (!this.lastT) {
-        this.lastT = t;
-        return; 
+      this.lastT = t;
+      return; 
     }
     
     const maxDelta = 100;
@@ -234,7 +307,13 @@ export class MyScene extends CGFscene {
     this.fire.update(t);
     
     this.helicopter.update(t, deltaT);
+    
+    // Atualizar posição da câmera se estiver no modo 'follow'
+    if (this.cameraMode === 'follow') {
+      this.updateCameraPosition();
+    }
   }
+  
 
   setDefaultAppearance() {
     this.setAmbient(0.5, 0.5, 0.5, 1.0);
