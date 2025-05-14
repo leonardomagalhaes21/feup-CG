@@ -222,7 +222,6 @@ export class MyHeli extends CGFobject {
                 // Chegou próximo à água
                 this.y = -25; 
                 this.bucketFilled = true;
-                this.state = 'taking_off'; 
             }
         }
         else if (this.state === 'dropping_water') {
@@ -329,7 +328,7 @@ export class MyHeli extends CGFobject {
     land() {
         if (this.state === 'flying') {
             // Se estiver sobre o lago e o balde não estiver cheio, encher o balde
-            if (this.isOverLake()) {
+            if (this.isOverLake() && !this.isMoving()) {
                 if (!this.bucketFilled) {
                     this.state = 'filling_bucket';
                     this.velocity = [0, 0, 0]; 
@@ -338,6 +337,10 @@ export class MyHeli extends CGFobject {
                 }
             } 
         }
+    }    
+    
+    isMoving() {
+        return Math.abs(this.velocity[0]) > 0.03 || Math.abs(this.velocity[2]) > 0.03;
     }
 
     /**
@@ -370,7 +373,7 @@ export class MyHeli extends CGFobject {
         this.z = -250;  
         this.orientation = 0;
         this.velocity = [0, 0, 0];
-        this.state = 'flying';
+        this.state = 'landed';
         this.bladeRotation = 0;
         this.bladeSpeed = 0;
         this.pitchAngle = 0;
