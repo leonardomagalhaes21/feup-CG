@@ -263,11 +263,9 @@ export class MyScene extends CGFscene {
     }
     
     if (this.gui.isKeyPressed("KeyO")) {
-        if (!this.oKeyPressed) {
-            this.helicopter.dropWater();
-            this.oKeyPressed = true;
-        }
-      }
+        this.helicopter.dropWater();
+    }
+    
     if (this.gui.isKeyPressed("KeyC")) {
       if (!this.cKeyPressed) {
         this.toggleCameraMode();
