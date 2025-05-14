@@ -112,9 +112,9 @@ export class MyScene extends CGFscene {
     this.helicopter.x = -150; 
     this.helicopter.y = -12;    
     this.helicopter.z = -250; 
-    this.helicopter.state = 'flying';
+    this.helicopter.state = 'landed';
     this.helicopter.bucketDeployed = true;
-    this.helicopter.bladeSpeed = this.helicopter.maxBladeSpeed*0.1;
+    this.helicopter.bladeSpeed = 0;
     
     this.speedFactor = 1.0;
 
@@ -255,6 +255,7 @@ export class MyScene extends CGFscene {
 
     if (this.gui.isKeyPressed("KeyL")) {
       this.helicopter.land();
+      keysPressed = true;
     }
     
     if (this.gui.isKeyPressed("KeyP")) {
@@ -276,13 +277,6 @@ export class MyScene extends CGFscene {
     } else {
       this.cKeyPressed = false;
     }
-    //landing
-    if (this.gui.isKeyPressed("KeyL")) {
-        this.helicopter.land();
-        keysPressed = true;
-    }
-
-    
 
     // Reset lights if no keys are pressed
     if (!keysPressed) {
