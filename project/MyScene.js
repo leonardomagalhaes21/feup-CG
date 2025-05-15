@@ -123,9 +123,9 @@ export class MyScene extends CGFscene {
     this.burntGroundTexture = new CGFtexture(this, 'textures/burnt_ground.jpg');
     
     // Criar lago na cena
-    this.lake = new MyLake(this, 40, 35, 'textures/water.jpg');
+    this.lake = new MyLake(this, 70, 60, 'textures/water.jpg');
     this.lake.x = -280;
-    this.lake.y = -29.5; 
+    this.lake.y = -29.75; 
     this.lake.z = -230;
     
     // Criar fogo na floresta
