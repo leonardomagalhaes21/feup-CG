@@ -1,6 +1,7 @@
 import { CGFobject, CGFappearance, CGFtexture } from '../lib/CGF.js';
 import { MySphere } from './MySphere.js';
 import { MyCylinder } from './MyCylinder.js';
+import { MyBucket } from './MyBucket.js';
 
 export class MyHeli extends CGFobject {
     constructor(scene, 
@@ -30,7 +31,7 @@ export class MyHeli extends CGFobject {
         this.state = 'landed'; // 'landed', 'taking_off', 'flying', 'landing', 'filling_bucket'
         this.bladeRotation = 0;
         this.bladeSpeed = 0;
-        this.maxBladeSpeed = Math.PI * 0.5;
+        this.maxBladeSpeed = Math.PI * 0.2;
         
         // Inclinação
         this.pitchAngle = 0;
@@ -89,7 +90,7 @@ export class MyHeli extends CGFobject {
         this.landingGear = new MyCylinder(this.scene, 8, 1);
         
         // Balde de água
-        this.bucketBase = new MyCylinder(this.scene, 16, 1); 
+        this.bucketBase = new MyBucket(this.scene, 16, 1); 
         this.bucketRim = new MyCylinder(this.scene, 16, 1);
         this.bucketHandle = new MyCylinder(this.scene, 8, 1); 
     }
@@ -221,7 +222,6 @@ export class MyHeli extends CGFobject {
                 // Chegou próximo à água
                 this.y = -25; 
                 this.bucketFilled = true;
-                this.state = 'taking_off'; 
             }
         }
         else if (this.state === 'dropping_water') {
@@ -249,6 +249,7 @@ export class MyHeli extends CGFobject {
             if (progress >= 1.0) {
                 this.isWaterDropping = false;
                 this.bucketFilled = false;
+                this.bucketBase.setShowWater(false);
                 this.waterDropTime = 0;
                 this.state = 'flying';
             }
@@ -327,7 +328,7 @@ export class MyHeli extends CGFobject {
     land() {
         if (this.state === 'flying') {
             // Se estiver sobre o lago e o balde não estiver cheio, encher o balde
-            if (this.isOverLake()) {
+            if (this.isOverLake() && !this.isMoving()) {
                 if (!this.bucketFilled) {
                     this.state = 'filling_bucket';
                     this.velocity = [0, 0, 0]; 
@@ -336,6 +337,10 @@ export class MyHeli extends CGFobject {
                 }
             } 
         }
+    }    
+    
+    isMoving() {
+        return Math.abs(this.velocity[0]) > 0.03 || Math.abs(this.velocity[2]) > 0.03;
     }
 
     /**
@@ -368,12 +373,13 @@ export class MyHeli extends CGFobject {
         this.z = -250;  
         this.orientation = 0;
         this.velocity = [0, 0, 0];
-        this.state = 'flying';
+        this.state = 'landed';
         this.bladeRotation = 0;
         this.bladeSpeed = 0;
         this.pitchAngle = 0;
         this.bucketDeployed = true;
         this.bucketFilled = false;
+        this.bucketBase.setShowWater(false);
         this.fillStartTime = null;
         
     }
@@ -676,16 +682,7 @@ export class MyHeli extends CGFobject {
             this.scene.rotate(Math.PI/2, 1, 0, 0);
             
             if (this.bucketFilled) {
-                this.scene.pushMatrix();
-                this.scene.translate(0, 0.4, 0); // Posição do nível da água
-                this.scene.scale(0.75, 0.1, 0.75); // Um pouco menor que o interior
-                this.scene.rotate(Math.PI/2, 1, 0, 0);
-                
-                // Material para a água (azul transparente)
-                this.waterMaterial.apply();
-                
-                this.bucketBase.display();
-                this.scene.popMatrix();
+                this.bucketBase.setShowWater(true);
             }
             
             // Se estiver despejando água, mostrar a animação
@@ -784,25 +781,6 @@ export class MyHeli extends CGFobject {
             this.scene.popMatrix();
             
             this.scene.popMatrix();
-            
-            // Se o balde estiver cheio, desenhar a "água" dentro do balde
-            if (this.bucketFilled) {
-                this.scene.pushMatrix();
-                this.scene.translate(0, 0.4, 0); 
-                this.scene.scale(0.75, 0.1, 0.75);
-                this.scene.rotate(Math.PI/2, 1, 0, 0);
-                
-                // Material para a água
-                const waterSurface = new CGFappearance(this.scene);
-                waterSurface.setAmbient(0.0, 0.4, 0.8, 0.8);
-                waterSurface.setDiffuse(0.0, 0.5, 0.9, 0.8);
-                waterSurface.setSpecular(0.2, 0.7, 1.0, 0.9);
-                waterSurface.setShininess(150);
-                waterSurface.apply();
-                
-                this.bucketBase.display();
-                this.scene.popMatrix();
-            }
             
             this.scene.popMatrix(); 
             
