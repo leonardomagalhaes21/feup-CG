@@ -137,9 +137,7 @@ export class MyScene extends CGFscene {
     // Adicionar referências ao helicóptero
     this.helicopter.lake = this.lake;
     this.helicopter.fire = this.fire;
-
-   
-
+    this.helicopter.fireStation = this.fireStation;
   }
 
   initLights() {

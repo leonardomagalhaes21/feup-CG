@@ -300,6 +300,11 @@ export class MyBuilding extends CGFobject {
         this.scene.popMatrix();
     }
     
+
+    isOverHeliport(x, z) {
+        return (x > -155 && x < -145 && z > -255 && z < -245);
+    }
+    
     display() {
         // Módulo esquerdo
         this.scene.pushMatrix();

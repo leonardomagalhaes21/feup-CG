@@ -44,6 +44,7 @@ export class MyHeli extends CGFobject {
         this.maxVerticalSpeed = 0.1;
         
         // Balde
+        this.showBucket = true;
         this.bucketDeployed = true;
         this.bucketFilled = false;
         this.bucketPosition = [0, -2, 0];
@@ -55,13 +56,20 @@ export class MyHeli extends CGFobject {
         // Referência para objetos da cena para interação
         this.lake = null;
         this.fire = null;
+        this.fireStation = null;
         
         this.initComponents();
         this.createMaterials();
     }
+
     isOverLake() {
         if (!this.lake) return false;
         return this.lake.isOverLake(this.x, this.z);
+    }
+    
+    isOverHeliport() {
+        if (!this.fireStation) return false;
+        return this.fireStation.isOverHeliport(this.x, this.z);
     }
     
     // Adicione este método para verificar se o helicóptero está sobre o fogo
@@ -169,6 +177,8 @@ export class MyHeli extends CGFobject {
             this.bladeSpeed = Math.min(this.bladeSpeed + 0.01, this.maxBladeSpeed);
         } else {
             this.bladeSpeed = Math.max(0, this.bladeSpeed - 0.01);
+            this.y = -16; // Manter a altura do helicóptero no heliporto
+            this.setShowBucket(false);
         }
         
         // Implementar movimento conforme o estado
@@ -194,18 +204,20 @@ export class MyHeli extends CGFobject {
                 this.y += 0.1 * deltaT / 50;
             } else {
                 this.state = 'flying';
+                this.showBucket = true;
             }
         }
         else if (this.state === 'landing') {
             // Desacelerar
             this.velocity = [0, 0, 0];
+            this.showBucket = false;
             
             // Descer lentamente
-            if (this.y > 0) {
+            if (this.y > -16) {
                 this.y -= 0.1 * deltaT / 50;
             } else {
                 // Tocou o solo
-                this.y = 0;
+                this.y = -16;
                 this.state = 'landed';
             }
             
@@ -252,6 +264,7 @@ export class MyHeli extends CGFobject {
                 this.bucketBase.setShowWater(false);
                 this.waterDropTime = 0;
                 this.state = 'flying';
+                this.setShowBucket(true);
             }
         }
     }
@@ -335,12 +348,21 @@ export class MyHeli extends CGFobject {
                 } else {
                     console.log("O balde já está cheio!");
                 }
-            } 
+            }
+            
+            if (this.isOverHeliport() && !this.isMoving()) {
+                this.state = 'landing';
+                this.velocity = [0, 0, 0]; 
+            }
         }
     }    
     
     isMoving() {
         return Math.abs(this.velocity[0]) > 0.03 || Math.abs(this.velocity[2]) > 0.03;
+    }
+
+    setShowBucket(show) {
+        this.showBucket = show;
     }
 
     /**
@@ -369,7 +391,7 @@ export class MyHeli extends CGFobject {
         
     reset() {
         this.x = -150;  
-        this.y = -12;
+        this.y = -16;
         this.z = -250;  
         this.orientation = 0;
         this.velocity = [0, 0, 0];
@@ -377,6 +399,7 @@ export class MyHeli extends CGFobject {
         this.bladeRotation = 0;
         this.bladeSpeed = 0;
         this.pitchAngle = 0;
+        this.showBucket = false;
         this.bucketDeployed = true;
         this.bucketFilled = false;
         this.bucketBase.setShowWater(false);
@@ -659,8 +682,7 @@ export class MyHeli extends CGFobject {
         this.gearMaterial.apply();
         this.landingGear.display();
         this.scene.popMatrix();
-        
-        if (this.bucketDeployed) {
+        if (this.showBucket && this.bucketDeployed) {
             this.scene.pushMatrix();
             
             // Cabo principal que liga o helicóptero ao balde
