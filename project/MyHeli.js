@@ -32,6 +32,7 @@ export class MyHeli extends CGFobject {
         this.bladeRotation = 0;
         this.bladeSpeed = 0;
         this.maxBladeSpeed = Math.PI * 0.2;
+        this.lastSpeedFactor = 1.0; // Track speed factor changes
         
         // Inclinação
         this.pitchAngle = 0;
@@ -173,6 +174,28 @@ export class MyHeli extends CGFobject {
         // Atualizar rotação das hélices
         this.bladeRotation = (this.bladeRotation + this.bladeSpeed * deltaT / 50) % (2 * Math.PI);
         
+        // Check for speed factor changes
+        const currentSpeedFactor = this.scene.speedFactor || 1.0;
+        if (this.lastSpeedFactor !== currentSpeedFactor && this.state === 'flying') {
+            const speed = Math.sqrt(this.velocity[0] * this.velocity[0] + this.velocity[2] * this.velocity[2]);
+            if (speed > 0) {
+                // Calculate new speed based on ratio of speed factors, maintaining direction
+                const scaleFactor = currentSpeedFactor / this.lastSpeedFactor;
+                this.velocity[0] *= scaleFactor;
+                this.velocity[2] *= scaleFactor;
+                
+                // Ensure we don't exceed the new max speed
+                const newSpeed = Math.sqrt(this.velocity[0] * this.velocity[0] + this.velocity[2] * this.velocity[2]);
+                const maxSpeed = 0.3 * currentSpeedFactor;
+                if (newSpeed > maxSpeed) {
+                    const adjustFactor = maxSpeed / newSpeed;
+                    this.velocity[0] *= adjustFactor;
+                    this.velocity[2] *= adjustFactor;
+                }
+            }
+            this.lastSpeedFactor = currentSpeedFactor;
+        }
+        
         if (this.state !== 'landed') {
             this.bladeSpeed = Math.min(this.bladeSpeed + 0.01, this.maxBladeSpeed);
         } else {
@@ -188,7 +211,9 @@ export class MyHeli extends CGFobject {
             
             // Ajustar inclinação com base na velocidade
             const speed = Math.sqrt(this.velocity[0] * this.velocity[0] + this.velocity[2] * this.velocity[2]);
-            const targetPitch = -this.maxPitchAngle * (speed / 0.3); 
+            const speedFactor = this.scene.speedFactor || 1.0;
+            const maxSpeed = 0.3 * speedFactor;
+            const targetPitch = -this.maxPitchAngle * (speed / maxSpeed); 
             this.pitchAngle = 0.9 * this.pitchAngle + 0.1 * targetPitch;
             
    
@@ -249,10 +274,13 @@ export class MyHeli extends CGFobject {
             const elapsed = t - this.waterDropTime;
             const progress = Math.min(elapsed / this.waterDropDuration, 1.0);
             
-            // Animar queda da água
-            this.waterDropHeight = progress * 20; 
+            // Animar queda da água - calculando distância até o solo
+            // Considerar a altura atual do helicóptero para determinar a altura da coluna de água
+            const groundDistance = Math.abs(this.y); // Distância aproximada até o chão
+            this.waterDropHeight = progress * groundDistance; 
             this.isWaterDropping = true;
             
+            // Apagar o fogo quando a água chegar aproximadamente na metade do caminho
             if (progress >= 0.5 && this.fire && this.fire.active) {
                 this.fire.extinguish();
             }
@@ -313,7 +341,9 @@ export class MyHeli extends CGFobject {
             let currentSpeed = Math.sqrt(this.velocity[0] * this.velocity[0] + this.velocity[2] * this.velocity[2]);
             let newSpeed = currentSpeed + v;
             
-            const maxSpeed = 0.3;
+            // Get speedFactor from scene and apply it to maxSpeed
+            const speedFactor = this.scene.speedFactor || 1.0;
+            const maxSpeed = 0.3 * speedFactor;
             newSpeed = Math.max(-maxSpeed, Math.min(maxSpeed, newSpeed));
             
             if (currentSpeed === 0 && newSpeed !== 0) {
@@ -720,9 +750,9 @@ export class MyHeli extends CGFobject {
                 
                 // Desenhar "coluna" de água caindo
                 this.scene.pushMatrix();
-                this.scene.translate(0, -4.5 - this.waterDropHeight/2, 0);
-                this.scene.scale(0.7, this.waterDropHeight, 0.7);
-                this.scene.rotate(Math.PI/2, 1, 0, 0);
+                // Posicionar a coluna de água abaixo do balde
+                this.scene.translate(0, -0.6, 0); // Posição inicial embaixo do balde
+                this.scene.scale(0.7, 0.7, this.waterDropHeight);
                 this.bucketBase.display(); // Usar cilindro como coluna de água
                 this.scene.popMatrix();
                 
@@ -730,7 +760,8 @@ export class MyHeli extends CGFobject {
                 if (this.waterDropHeight > 10) {
                     const splashScale = (this.waterDropHeight - 10) / 10;
                     this.scene.pushMatrix();
-                    this.scene.translate(0, -4.5 - this.waterDropHeight, 0);
+                    const groundDistance = Math.abs(this.y) - 4.5; // Distância até o solo a partir do balde
+                    this.scene.translate(0, -groundDistance, 0); // Colocar o splash no chão
                     this.scene.scale(2 * splashScale, 0.1, 2 * splashScale);
                     this.scene.rotate(Math.PI/2, 1, 0, 0);
                     this.bucketBase.display();
