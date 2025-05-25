@@ -138,7 +138,7 @@ export class MyBuilding extends CGFobject {
         if (!this.helicopterRef) return;
 
         this.currentHeliportState = helicopterState;
-        this.blinkActive = (this.currentHeliportState === 'taking_off' || this.currentHeliportState === 'landing');
+        this.blinkActive = (this.currentHeliportState === 'taking_off' || this.currentHeliportState === 'landing') && this.isOverHeliport(this.helicopterRef.x, this.helicopterRef.z);
 
         // Texture Blinking Logic
         if (this.blinkActive) {

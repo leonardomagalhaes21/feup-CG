@@ -1,6 +1,6 @@
 import { CGFobject, CGFappearance } from "../lib/CGF.js";
-import { MyCylinder } from "./MyCylinder.js";
 import { MyPyramid } from "./MyPyramid.js";
+import { MyObliqueCone } from "./MyObliqueCone.js";
 
 /**
  * MyTree - Implementation of a parametrizable tree
@@ -24,7 +24,6 @@ export class MyTree extends CGFobject {
     this.tiltAngle = tiltAngle * Math.PI / 180; 
     this.tiltAxis = tiltAxis.toUpperCase();
     this.trunkRadius = trunkRadius;
-    this.treeHeight = treeHeight;
     this.crownColor = crownColor;
 
     // Textures
@@ -32,10 +31,26 @@ export class MyTree extends CGFobject {
     this.crownTexture = crownTexture;
 
     // Derived parameters
-    this.trunkHeight = this.treeHeight * 0.2; 
-    this.crownHeight = this.treeHeight * 0.85; 
+    this.trunkHeight = treeHeight * 0.2;
+    this.crownHeight = treeHeight * 0.85;
 
     this.numLayers = Math.max(5, Math.round(this.crownHeight / 1.2));
+
+    const layerHeightForCalc = this.crownHeight / this.numLayers;
+    const pyramidHeightForCalc = layerHeightForCalc * 1.5;
+    const yBaseOfLastPyramid = this.trunkHeight + ((this.numLayers - 1) * layerHeightForCalc * 0.6);
+    this.actualTreeTopY = yBaseOfLastPyramid + pyramidHeightForCalc - 0.5;
+
+    // Store the calculated apex offsets for the main cone (entire tree height)
+    this.coneApexOffsetX = 0;
+    this.coneApexOffsetZ = 0;
+    if (this.tiltAngle !== 0) {
+        if (this.tiltAxis === 'X') {
+            this.coneApexOffsetZ = -this.actualTreeTopY * Math.tan(this.tiltAngle);
+        } else if (this.tiltAxis === 'Z') {
+            this.coneApexOffsetX = this.actualTreeTopY * Math.tan(this.tiltAngle);
+        }
+    }
 
     this.initMaterials();
     }
@@ -63,7 +78,7 @@ export class MyTree extends CGFobject {
             this.crownMaterial.setTextureWrap('REPEAT', 'REPEAT');
         }
 
-        this.trunk = new MyCylinder(this.scene, 12, 4);
+        this.trunk = new MyObliqueCone(this.scene, 12, this.trunkRadius, this.actualTreeTopY, this.coneApexOffsetX, this.coneApexOffsetZ);
         this.pyramid = new MyPyramid(this.scene, 4, 1); 
     }
     
@@ -287,77 +302,56 @@ export class MyTree extends CGFobject {
     display() {
         this.scene.pushMatrix();
     
-        // Configuração do tronco
+        // Draw Trunk
         this.trunkMaterial.apply();
-        this.scene.pushMatrix();
-        
-        // Ângulo de inclinação para o tronco
-        let trunkTiltAngle = this.tiltAngle * 0.8; 
-        
-        let topOffsetX = 0;
-        let topOffsetZ = 0;
-        
-        if (this.tiltAxis === 'X') {
-            topOffsetZ = Math.sin(trunkTiltAngle) * this.trunkHeight;
-        } else if (this.tiltAxis === 'Z') {
-            topOffsetX = Math.sin(trunkTiltAngle) * this.trunkHeight;
-        }
-        
-        // Primeiro, rotacionamos para orientação vertical do cilindro
-        this.scene.rotate(-Math.PI / 2, 1, 0, 0);
-        
+        this.trunk.display(); 
+    
+        // Draw Crown
+        this.scene.pushMatrix(); // Start crown transformations
 
-        const shearMatrix = [
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            this.tiltAxis === 'Z' ? topOffsetX/this.trunkHeight : 0, 
-            this.tiltAxis === 'X' ? topOffsetZ/this.trunkHeight : 0, 
-            1, 0,
-            0, 0, 0, 1
-        ];
-        
-        this.scene.multMatrix(shearMatrix);
-        
-        // Escalar para dimensões do tronco
-        this.scene.scale(this.trunkRadius, this.trunkRadius, this.trunkHeight);
-        
-        this.trunk.display();
-        this.scene.popMatrix();
-    
-        // Aplicar tilt à copa da árvore
-        this.scene.pushMatrix();
-        
-        // Posicionar corretamente a copa no topo do tronco inclinado
-        if (this.tiltAxis === 'X') {
-            this.scene.translate(0, this.trunkHeight, -topOffsetZ);
-            this.scene.rotate(this.tiltAngle, 1, 0, 0);
-        } else if (this.tiltAxis === 'Z') {
-            this.scene.translate(topOffsetX, this.trunkHeight, 0);
-            this.scene.rotate(this.tiltAngle, 0, 0, 1);
-        }
-    
-        // Draw the crown
         this.crownMaterial.apply();
         
         const layerHeight = this.crownHeight / this.numLayers;
         let currentRadius = this.trunkRadius * 3;
-    
+        let currentLayerYBase = this.trunkHeight;
+
         for (let layer = 0; layer < this.numLayers; layer++) {
+            let fractionOfHeight = 0;
+            if (this.actualTreeTopY > 0) {
+                fractionOfHeight = currentLayerYBase / this.actualTreeTopY;
+            }
+            const layerCenterX = this.coneApexOffsetX * fractionOfHeight;
+            const layerCenterZ = this.coneApexOffsetZ * fractionOfHeight;
+
             const layerFactor = 0.8 - (layer / this.numLayers) * 0.5;
             const pyramidBaseSize = currentRadius * 1.5 * layerFactor;
             const pyramidHeight = layerHeight * 1.5;
     
             this.scene.pushMatrix();
+            this.scene.translate(layerCenterX, currentLayerYBase, layerCenterZ);
+            
+            if (this.tiltAngle !== 0) {
+                if (this.tiltAxis === 'X') {
+                    this.scene.rotate(this.tiltAngle, 1, 0, 0);
+                } else if (this.tiltAxis === 'Z') {
+                    this.scene.rotate(this.tiltAngle, 0, 0, 1);
+                }
+            }
+            
             this.scene.rotate((layer % 2) * Math.PI / 6, 0, 1, 0); 
+            
+            this.scene.pushMatrix();
             this.scene.scale(pyramidBaseSize, pyramidHeight, pyramidBaseSize);
             this.pyramid.display();
             this.scene.popMatrix();
+            
+            this.scene.popMatrix(); // End this layer's transformations
     
-            this.scene.translate(0, layerHeight * 0.6, 0); 
-            currentRadius *= 0.88;
+            currentLayerYBase += layerHeight * 0.6; // Move up for the next layer's base (as before)
+            currentRadius *= 0.88; // Decrease radius for next layer (as before)
         }
     
-        this.scene.popMatrix();
-        this.scene.popMatrix();
+        this.scene.popMatrix(); // End crown transformations
+        this.scene.popMatrix(); // End overall tree matrix
     }
 }
