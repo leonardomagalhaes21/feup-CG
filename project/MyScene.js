@@ -75,7 +75,10 @@ export class MyScene extends CGFscene {
     // Carregar a textura do panorama e criar o objeto MyPanorama
     this.panoramaTexture = new CGFtexture(this, 'textures/panorama.jpg');
     this.panorama = new MyPanorama(this, this.panoramaTexture);
-    this.heliportTexture = new CGFtexture(this, 'textures/heliport.jpeg');
+    this.heliportDefaultTexture = new CGFtexture(this, 'textures/heliport.jpeg');
+    this.heliportUpTexture = new CGFtexture(this, 'textures/heliport_up.png');
+    this.heliportDownTexture = new CGFtexture(this, 'textures/heliport_down.png');
+
     this.bombeirosTexture = new CGFtexture(this, 'textures/bombeiros.jpeg');
 
     this.windowTexture = new CGFtexture(this, 'textures/window.jpg');
@@ -85,7 +88,11 @@ export class MyScene extends CGFscene {
       3,
       3,
       this.windowTexture,
-      this.heliportTexture,
+      { // heliportTextures object
+        default: this.heliportDefaultTexture,
+        up: this.heliportUpTexture,
+        down: this.heliportDownTexture
+      },
       this.bombeirosTexture,
       [1.0, 1.0, 1.0]
     );
@@ -138,6 +145,7 @@ export class MyScene extends CGFscene {
     this.helicopter.lake = this.lake;
     this.helicopter.fire = this.fire;
     this.helicopter.fireStation = this.fireStation;
+    this.fireStation.setHelicopter(this.helicopter); // Pass helicopter instance to fireStation
   }
 
   initLights() {
@@ -297,6 +305,10 @@ export class MyScene extends CGFscene {
     this.fire.update(t);
     
     this.helicopter.update(t, deltaT);
+    // Update fireStation (MyBuilding instance) with current time and helicopter state
+    if (this.fireStation) { // Ensure fireStation is initialized
+        this.fireStation.update(t, this.helicopter.state);
+    }
     
     // Atualizar posição da câmera se estiver no modo 'follow'
     if (this.cameraMode === 'follow') {

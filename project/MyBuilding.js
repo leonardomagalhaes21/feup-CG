@@ -1,9 +1,10 @@
 import { CGFobject, CGFappearance } from "../lib/CGF.js";
 import { MyPlane } from "./MyPlane.js";
 import { MyWindow } from "./MyWindow.js";
+import { MySphere } from "./MySphere.js";
 
 export class MyBuilding extends CGFobject {
-    constructor(scene, totalWidth, floors, windowsPerFloor, windowTexture, roofTexture, bombeirosTexture, buildingColor) {
+    constructor(scene, totalWidth, floors, windowsPerFloor, windowTexture, heliportTextures, bombeirosTexture, buildingColor) {
         super(scene);
         this.scene = scene;
         
@@ -15,7 +16,10 @@ export class MyBuilding extends CGFobject {
         
         // Texturas
         this.windowTexture = windowTexture;
-        this.roofTexture = roofTexture;
+
+        this.hDefaultTex = heliportTextures.default;
+        this.hUpTex = heliportTextures.up;
+        this.hDownTex = heliportTextures.down;
         this.bombeirosTexture = bombeirosTexture;
         
         // Dimensões calculadas
@@ -35,8 +39,43 @@ export class MyBuilding extends CGFobject {
         this.doorHeight = this.floorHeight * 0.8;
         
         this.window = new MyWindow(this.scene, windowTexture);
+
+        // Heliport signaling
+        this.helicopterRef = null;
+        this.blinkActive = false;
+        this.blinkShowAlt = false; 
+        this.lastBlinkTime = 0;
+        this.blinkInterval = 500; // ms for texture blinking
+        this.currentHeliportState = 'none'; // 'none', 'taking_off', 'landing'
+
+        // Heliport lights
+        this.lightRadius = 0.25; 
+        this.heliportLight = new MySphere(this.scene, 16, 8, this.lightRadius);
+        this.pulsationFrequency = 0.005; 
+        this.lightPositions = []; 
+
         this.createMaterials();
         this.wall = new MyPlane(this.scene, 20);
+        this.calculateLightPositions(); 
+    }
+
+    setHelicopter(helicopter) {
+        this.helicopterRef = helicopter;
+    }
+
+    calculateLightPositions() {
+        const halfWidth = this.centerModuleWidth / 2;
+        const halfDepth = this.buildingDepth / 2;
+        // Place lights slightly inset from the true corners and on top of the heliport surface
+        const inset = this.lightRadius * 2; 
+        const lightY = this.centerModuleHeight + this.lightRadius / 2; 
+
+        this.lightPositions = [
+            [-halfWidth + inset, lightY, -halfDepth + inset], // Front-left
+            [ halfWidth - inset, lightY, -halfDepth + inset], // Front-right
+            [-halfWidth + inset, lightY,  halfDepth - inset], // Back-left
+            [ halfWidth - inset, lightY,  halfDepth - inset], // Back-right
+        ];
     }
     
     createMaterials() {
@@ -68,16 +107,68 @@ export class MyBuilding extends CGFobject {
             this.bombeirosSignMaterial.setTextureWrap('CLAMP_TO_EDGE', 'CLAMP_TO_EDGE');
         }
         
-        // Telhado
+        // Telhado (Heliporto)
         this.roofMaterial = new CGFappearance(this.scene);
         this.roofMaterial.setAmbient(0.5, 0.5, 0.5, 1.0);
         this.roofMaterial.setDiffuse(0.7, 0.7, 0.7, 1.0);
         this.roofMaterial.setSpecular(0.2, 0.2, 0.2, 1.0);
         this.roofMaterial.setShininess(10.0);
         
-        if (this.roofTexture && typeof this.roofTexture.bind === 'function') {
-            this.roofMaterial.setTexture(this.roofTexture);
+        if (this.hDefaultTex && typeof this.hDefaultTex.bind === 'function') { // Use default heliport texture
+            this.roofMaterial.setTexture(this.hDefaultTex);
             this.roofMaterial.setTextureWrap('REPEAT', 'REPEAT');
+        }
+
+        // Heliport Light Materials
+        this.lightDefaultMaterial = new CGFappearance(this.scene);
+        this.lightDefaultMaterial.setAmbient(0.2, 0.2, 0.2, 1.0);
+        this.lightDefaultMaterial.setDiffuse(0.3, 0.3, 0.3, 1.0);
+        this.lightDefaultMaterial.setSpecular(0.1, 0.1, 0.1, 1.0);
+        this.lightDefaultMaterial.setShininess(10.0);
+        this.lightDefaultMaterial.setEmission(0,0,0,1); 
+
+        this.lightActiveMaterial = new CGFappearance(this.scene);
+        this.lightActiveMaterial.setAmbient(0.5, 0.0, 0.0, 1.0); 
+        this.lightActiveMaterial.setDiffuse(0.7, 0.0, 0.0, 1.0); 
+        this.lightActiveMaterial.setSpecular(0.2, 0.0, 0.0, 1.0);
+        this.lightActiveMaterial.setShininess(20.0);
+    }
+
+    update(currentTime, helicopterState) {
+        if (!this.helicopterRef) return;
+
+        this.currentHeliportState = helicopterState;
+        this.blinkActive = (this.currentHeliportState === 'taking_off' || this.currentHeliportState === 'landing');
+
+        // Texture Blinking Logic
+        if (this.blinkActive) {
+            if (currentTime - this.lastBlinkTime > this.blinkInterval) {
+                this.blinkShowAlt = !this.blinkShowAlt;
+                this.lastBlinkTime = currentTime;
+            }
+
+            if (this.blinkShowAlt) {
+                if (this.currentHeliportState === 'taking_off' && this.hUpTex) {
+                    this.roofMaterial.setTexture(this.hUpTex);
+                } else if (this.currentHeliportState === 'landing' && this.hDownTex) {
+                    this.roofMaterial.setTexture(this.hDownTex);
+                } else {
+                    this.roofMaterial.setTexture(this.hDefaultTex); // Fallback
+                }
+            } else {
+                this.roofMaterial.setTexture(this.hDefaultTex);
+            }
+        } else {
+            this.roofMaterial.setTexture(this.hDefaultTex);
+            this.blinkShowAlt = false; // Ensure default is shown when not blinking
+        }
+
+        // Pulsating Lights Logic
+        if (this.blinkActive) { 
+            const emissionValue = (Math.sin(currentTime * this.pulsationFrequency) + 1) / 2; // Varies 0 to 1
+            this.lightActiveMaterial.setEmission(emissionValue, 0, 0, 1.0); // Pulsating red
+        } else {
+            this.lightActiveMaterial.setEmission(0, 0, 0, 1.0); // No emission
         }
     }
 
@@ -196,14 +287,27 @@ export class MyBuilding extends CGFobject {
         this.scene.rotate(-Math.PI/2, 1, 0, 0);
         this.scene.scale(width, depth, 1);
         
-        if (isCenter && this.roofTexture && typeof this.roofTexture.bind === 'function') {
-            this.roofMaterial.apply();
+        if (isCenter && this.hDefaultTex) { // Check hDefaultTex as a proxy for heliport existence
+            this.roofMaterial.apply(); // roofMaterial is updated in the update() method
         } else {
             this.buildingMaterial.apply();
         }
         
         this.wall.display();
         this.scene.popMatrix();
+
+        // Draw heliport lights if this is the center module (heliport)
+        if (isCenter) {
+            const materialToApply = this.blinkActive ? this.lightActiveMaterial : this.lightDefaultMaterial;
+            materialToApply.apply();
+
+            for (const pos of this.lightPositions) {
+                this.scene.pushMatrix();
+                this.scene.translate(pos[0], pos[1], pos[2]);
+                this.heliportLight.display();
+                this.scene.popMatrix();
+            }
+        }
     }
 
     /**
@@ -293,18 +397,29 @@ export class MyBuilding extends CGFobject {
         if (this.bombeirosTexture && typeof this.bombeirosTexture.bind === 'function') {
             this.bombeirosSignMaterial.apply();
         } else {
-            this.bombeirosSignMaterial.apply();
+            // Fallback if texture is not available
+            this.bombeirosSignMaterial.apply(); // Apply material even without texture to see the sign
         }
         
         this.wall.display();
         this.scene.popMatrix();
     }
     
-
     isOverHeliport(x, z) {
-        return (x > -155 && x < -145 && z > -255 && z < -245);
+        const buildingBaseX = -150;
+        const buildingBaseZ = -250;
+
+        const heliportMinX = buildingBaseX - this.centerModuleWidth / 2;
+        const heliportMaxX = buildingBaseX + this.centerModuleWidth / 2;
+        const heliportMinZ = buildingBaseZ - this.buildingDepth / 2;
+        const heliportMaxZ = buildingBaseZ + this.buildingDepth / 2;
+
+        return (
+            x >= heliportMinX && x <= heliportMaxX &&
+            z >= heliportMinZ && z <= heliportMaxZ
+        );
     }
-    
+
     display() {
         // Módulo esquerdo
         this.scene.pushMatrix();
@@ -321,6 +436,7 @@ export class MyBuilding extends CGFobject {
         
         // Módulo central
         this.scene.pushMatrix();
+        // No translation needed for central module as it's the reference
         this.drawModule(
             this.centerModuleWidth, 
             this.centerModuleHeight, 
