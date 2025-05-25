@@ -73,16 +73,14 @@ export class MyHeli extends CGFobject {
         return this.fireStation.isOverHeliport(this.x, this.z);
     }
     
-    // Adicione este método para verificar se o helicóptero está sobre o fogo
     isOverFire() {
-        if (!this.fire) return false;
+        if (!this.fire || !this.fire.active) return false;
         
-        // Verificar se está na proximidade do fogo (ajuste conforme necessário)
         const dx = this.x - this.fire.x;
         const dz = this.z - this.fire.z;
         const distance = Math.sqrt(dx*dx + dz*dz);
         
-        return distance < this.fire.baseRadius * 1.2;
+        return distance < this.fire.baseRadius;
     }
     
     initComponents() {
@@ -524,7 +522,7 @@ export class MyHeli extends CGFobject {
         
         // Hélice principal
         this.scene.pushMatrix();
-        this.scene.translate(0, 2, 0);
+        this.scene.translate(0, 1.75, 0);
         this.scene.rotate(this.bladeRotation, 0, 1, 0);
         
         // Pá 1

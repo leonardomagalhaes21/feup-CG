@@ -2,6 +2,7 @@ import { CGFobject, CGFappearance, CGFtexture } from '../lib/CGF.js';
 import { MySphere } from './MySphere.js';
 import { MyPlane } from './MyPlane.js';
 import { MyPyramid } from './MyPyramid.js';
+import { MyIrregularPolygon } from './MyIrregularPolygon.js';
 
 export class MyFire extends CGFobject {
     constructor(scene, width = 10, height = 5, numFlames = 15) {
@@ -20,7 +21,12 @@ export class MyFire extends CGFobject {
         
         this.baseRadius = width / 2;
         
-        this.basePlane = new MyPlane(this.scene, 20);
+        this.extinguishedTime = null; // Time when the fire was extinguished
+        this.showSmoke = false; // Controls if smoke should be drawn
+
+        this.smokeTime = 4000;
+
+        this.basePlane = new MyIrregularPolygon(this.scene, 12, 0.5, 0.35); 
         this.flamePyramid = new MyPyramid(this.scene, 4, 1);
         this.smokeObj = new MySphere(this.scene, 8, 8);
         
@@ -88,14 +94,15 @@ export class MyFire extends CGFobject {
         
         // Material para a base queimada
         this.baseMaterial = new CGFappearance(this.scene);
-        this.baseMaterial.setAmbient(0.1, 0.1, 0.1, 1.0);
-        this.baseMaterial.setDiffuse(0.2, 0.2, 0.2, 1.0);
+        this.baseMaterial.setAmbient(0.4, 0.4, 0.4, 1.0);
+        this.baseMaterial.setDiffuse(0.5, 0.5, 0.5, 1.0);
         this.baseMaterial.setSpecular(0.1, 0.1, 0.1, 1.0);
         this.baseMaterial.setShininess(5);
         
         // Textura para área queimada (se disponível)
         try {
             this.baseTexture = new CGFtexture(this.scene, 'textures/burnt_ground.jpg');
+            // Set burnt texture as the default for baseMaterial
             this.baseMaterial.setTexture(this.baseTexture);
             this.baseMaterial.setTextureWrap('REPEAT', 'REPEAT');
         } catch (e) {
@@ -120,15 +127,18 @@ export class MyFire extends CGFobject {
             return;
         }
         
-        if (!this.active) return;
-        
         const elapsed = t - this.lastTime;
         this.lastTime = t;
-        
-        for (const flame of this.flames) {
-            flame.rotationY += flame.rotationSpeed * elapsed / 1000;
-            
-            flame.currentHeight = flame.height * (0.7 + 0.3 * Math.sin(t/1000 + flame.phase));
+
+        if (this.active) {
+            for (const flame of this.flames) {
+                flame.rotationY += flame.rotationSpeed * elapsed / 1000;
+                flame.currentHeight = flame.height * (0.7 + 0.3 * Math.sin(t/1000 + flame.phase));
+            }
+        } else if (this.showSmoke) {
+            if (this.extinguishedTime && (t - this.extinguishedTime > this.smokeTime)) {
+                this.showSmoke = false;
+            }
         }
     }
     
@@ -137,6 +147,8 @@ export class MyFire extends CGFobject {
      */
     extinguish() {
         this.active = false;
+        this.showSmoke = true; // Start showing smoke
+        this.extinguishedTime = this.lastTime; // Record the time of extinguishing
         
         for (const flame of this.flames) {
             flame.height *= 0.2;
@@ -153,8 +165,12 @@ export class MyFire extends CGFobject {
         this.scene.rotate(-Math.PI/2, 1, 0, 0);
         this.scene.scale(this.baseRadius, this.baseRadius, 1);
         
-        this.baseMaterial.apply();
-        this.basePlane.display();
+        // Only draw the base with burnt texture if the fire is extinguished
+        if (!this.active && this.baseTexture) {
+            this.baseMaterial.setTexture(this.baseTexture);
+            this.baseMaterial.apply();
+            this.basePlane.display();
+        }
         
         this.scene.popMatrix();
     }
@@ -221,7 +237,9 @@ export class MyFire extends CGFobject {
             
             this.scene.gl.disable(this.scene.gl.BLEND);
         } else {
-            this.drawSmoke();
+            if (this.showSmoke) {
+                this.drawSmoke();
+            }
         }
     }
 }
