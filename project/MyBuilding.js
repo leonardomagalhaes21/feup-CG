@@ -1,4 +1,4 @@
-import { CGFobject, CGFappearance } from "../lib/CGF.js";
+import { CGFobject, CGFappearance, CGFshader } from "../lib/CGF.js";
 import { MyPlane } from "./MyPlane.js";
 import { MyWindow } from "./MyWindow.js";
 import { MySphere } from "./MySphere.js";
@@ -48,6 +48,11 @@ export class MyBuilding extends CGFobject {
         this.blinkInterval = 500; // ms for texture blinking
         this.currentHeliportState = 'none'; // 'none', 'taking_off', 'landing'
 
+        this.blendFactor = 0.0;
+        this.targetBlendFactor = 0.0;
+        this.blendSpeed = 0.2;
+        this.currentAltTexture = null;
+
         // Heliport lights
         this.lightRadius = 0.25; 
         this.heliportLight = new MySphere(this.scene, 16, 8, this.lightRadius);
@@ -56,7 +61,11 @@ export class MyBuilding extends CGFobject {
 
         this.createMaterials();
         this.wall = new MyPlane(this.scene, 20);
-        this.calculateLightPositions(); 
+        this.calculateLightPositions();
+        
+        // Initialize heliport shader
+        this.heliportShader = new CGFshader(this.scene.gl, "shaders/heliport.vert", "shaders/heliport.frag");
+        this.heliportShader.setUniformsValues({ uSampler2: 1 }); // Set texture unit 1 for alternative texture 
     }
 
     setHelicopter(helicopter) {
@@ -140,27 +149,38 @@ export class MyBuilding extends CGFobject {
         this.currentHeliportState = helicopterState;
         this.blinkActive = (this.currentHeliportState === 'taking_off' || this.currentHeliportState === 'landing') && this.isOverHeliport(this.helicopterRef.x, this.helicopterRef.z);
 
-        // Texture Blinking Logic
+        // Smooth Shader-based Blending Logic
         if (this.blinkActive) {
-            if (currentTime - this.lastBlinkTime > this.blinkInterval) {
-                this.blinkShowAlt = !this.blinkShowAlt;
-                this.lastBlinkTime = currentTime;
-            }
-
-            if (this.blinkShowAlt) {
-                if (this.currentHeliportState === 'taking_off' && this.hUpTex) {
-                    this.roofMaterial.setTexture(this.hUpTex);
-                } else if (this.currentHeliportState === 'landing' && this.hDownTex) {
-                    this.roofMaterial.setTexture(this.hDownTex);
-                } else {
-                    this.roofMaterial.setTexture(this.hDefaultTex); // Fallback
-                }
+            const blinkFrequency = 0.002; // Controls how fast the alternation happens
+            const cycleTime = Math.floor(currentTime * blinkFrequency) % 2; // Alternates between 0 and 1
+            
+            // Complete alternation
+            if (cycleTime === 0) {
+                this.targetBlendFactor = 0.0;
             } else {
-                this.roofMaterial.setTexture(this.hDefaultTex);
+                this.targetBlendFactor = 1.0;
+            }
+            
+            // Set the alternative texture based on helicopter state
+            if (this.currentHeliportState === 'taking_off' && this.hUpTex) {
+                this.currentAltTexture = this.hUpTex;
+            } else if (this.currentHeliportState === 'landing' && this.hDownTex) {
+                this.currentAltTexture = this.hDownTex;
+            } else {
+                this.currentAltTexture = this.hDefaultTex; // Fallback
             }
         } else {
-            this.roofMaterial.setTexture(this.hDefaultTex);
-            this.blinkShowAlt = false; // Ensure default is shown when not blinking
+            this.targetBlendFactor = 0.0; // Show only default texture
+            this.currentAltTexture = this.hDefaultTex;
+        }
+
+        // Smoothly interpolate blend factor towards target
+        const blendDiff = this.targetBlendFactor - this.blendFactor;
+        this.blendFactor += blendDiff * this.blendSpeed;
+        
+        // Update shader uniform
+        if (this.heliportShader) {
+            this.heliportShader.setUniformsValues({ uBlendFactor: this.blendFactor });
         }
 
         // Pulsating Lights Logic
@@ -287,13 +307,28 @@ export class MyBuilding extends CGFobject {
         this.scene.rotate(-Math.PI/2, 1, 0, 0);
         this.scene.scale(width, depth, 1);
         
-        if (isCenter && this.hDefaultTex) { // Check hDefaultTex as a proxy for heliport existence
-            this.roofMaterial.apply(); // roofMaterial is updated in the update() method
+        if (isCenter && this.hDefaultTex) {
+            this.scene.setActiveShader(this.heliportShader);
+            
+            // Bind base texture (default H texture) to texture unit 0
+            this.hDefaultTex.bind(0);
+            
+            // Bind alternative texture to texture unit 1
+            if (this.currentAltTexture) {
+                this.currentAltTexture.bind(1);
+            } else {
+                this.hDefaultTex.bind(1); // Fallback to default texture
+            }
+            
+            this.wall.display();
+            
+            // Reset to default shader
+            this.scene.setActiveShader(this.scene.defaultShader);
         } else {
             this.buildingMaterial.apply();
+            this.wall.display();
         }
         
-        this.wall.display();
         this.scene.popMatrix();
 
         // Draw heliport lights if this is the center module (heliport)

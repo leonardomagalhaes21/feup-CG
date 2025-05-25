@@ -1,8 +1,7 @@
 import { CGFobject, CGFappearance, CGFtexture } from '../lib/CGF.js';
 import { MySphere } from './MySphere.js';
-import { MyPlane } from './MyPlane.js';
-import { MyPyramid } from './MyPyramid.js';
 import { MyIrregularPolygon } from './MyIrregularPolygon.js';
+import { MyFlameTriangle } from './MyFlameTriangle.js';
 
 export class MyFire extends CGFobject {
     constructor(scene, width = 10, height = 5, numFlames = 15) {
@@ -27,7 +26,7 @@ export class MyFire extends CGFobject {
         this.smokeTime = 4000;
 
         this.basePlane = new MyIrregularPolygon(this.scene, 12, 0.5, 0.35); 
-        this.flamePyramid = new MyPyramid(this.scene, 4, 1);
+        this.flameShape = new MyFlameTriangle(this.scene);
         this.smokeObj = new MySphere(this.scene, 8, 8);
         
         this.lastTime = 0;
@@ -182,12 +181,25 @@ export class MyFire extends CGFobject {
         this.scene.translate(flame.x, 0, flame.z);
         this.scene.rotate(flame.rotationY, 0, 1, 0);
         
-        const height = flame.currentHeight || flame.height;
+        const currentFlameHeight = flame.currentHeight || flame.height;
         
+        const timeFactor = (this.lastTime / 300) + flame.phase;
+        const swayMagnitude = 0.3 * flame.width;
+
+        // Get the original vertices from the flameShape prototype
+        const originalVerts = this.flameShape.originalVertices;
+        const newVerts = [...originalVerts]; // Create a copy to modify
+
+        newVerts[6] = originalVerts[6] + Math.sin(timeFactor) * swayMagnitude;
+        newVerts[7] = originalVerts[7] + Math.cos(timeFactor * 0.7 + flame.phase / 2) * swayMagnitude * 0.1; 
+
+        // Update the vertices of the flameShape instance just before drawing this flame
+        this.flameShape.updateVertices(newVerts);
+
         this.scene.pushMatrix();
-        this.scene.scale(flame.width, height, flame.width/2);
+        this.scene.scale(flame.width, currentFlameHeight, 1); // Scale by animated height
         this.flameMaterial.apply();
-        this.flamePyramid.display();
+        this.flameShape.display();
         this.scene.popMatrix();
         
         this.scene.popMatrix();
