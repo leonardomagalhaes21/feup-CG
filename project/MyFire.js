@@ -11,7 +11,7 @@ export class MyFire extends CGFobject {
         this.height = height;
         this.numFlames = numFlames;
         
-        // Posição do fogo
+        
         this.x = 0;
         this.y = 0;
         this.z = 0;
@@ -20,8 +20,8 @@ export class MyFire extends CGFobject {
         
         this.baseRadius = width / 2;
         
-        this.extinguishedTime = null; // Time when the fire was extinguished
-        this.showSmoke = false; // Controls if smoke should be drawn
+        this.extinguishedTime = null; 
+        this.showSmoke = false;
 
         this.smokeTime = 4000;
 
@@ -41,34 +41,45 @@ export class MyFire extends CGFobject {
     /**
      * Inicializa as chamas com posições e parâmetros aleatórios
      */
-    initFlames() {
-        for (let i = 0; i < this.numFlames; i++) {
-            // Posição radial aleatória dentro da área do fogo
-            const radius = Math.random() * this.baseRadius * 0.8;
-            const angle = Math.random() * Math.PI * 2;
-            const x = Math.cos(angle) * radius;
-            const z = Math.sin(angle) * radius;
-            
-            const height = this.height * (0.5 + Math.random() * 0.5);
-            const width = this.width * 0.1 * (0.5 + Math.random() * 0.5);
-            
-            // Rotação base e velocidade de rotação aleatórias
-            const rotationY = Math.random() * Math.PI * 2;
-            const rotationSpeed = 0.2 + Math.random() * 0.3;
-            
-            const phase = Math.random() * Math.PI * 2;
-            
-            this.flames.push({
-                x: x,
-                z: z,
-                height: height,
-                width: width,
-                rotationY: rotationY,
-                rotationSpeed: rotationSpeed,
-                phase: phase
-            });
+    /**
+ * Inicializa as chamas com posições e parâmetros aleatórios
+ */
+initFlames() {
+    for (let i = 0; i < this.numFlames; i++) {
+        const radius = Math.random() * this.baseRadius * 0.9;
+        const angle = Math.random() * Math.PI * 2;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
+        
+        const heightDistribution = Math.random();
+
+        let y = 0;
+        if (heightDistribution < 0.7) {
+            y = 0.5 + Math.random() * 2.5;
+        } else {
+            y = Math.random() * 0.5;
         }
+        
+        const height = this.height * (0.4 + Math.random() * 0.6);
+        const width = this.width * 0.1 * (0.4 + Math.random() * 0.6);
+        
+        const rotationY = Math.random() * Math.PI * 2;
+        const rotationSpeed = 0.2 + Math.random() * 0.3;
+        
+        const phase = Math.random() * Math.PI * 2;
+        
+        this.flames.push({
+            x: x,
+            y: y,
+            z: z,
+            height: height,
+            width: width,
+            rotationY: rotationY,
+            rotationSpeed: rotationSpeed,
+            phase: phase
+        });
     }
+}
     
     /**
      * Inicializa materiais e texturas para o fogo
@@ -82,7 +93,6 @@ export class MyFire extends CGFobject {
         this.flameMaterial.setEmission(0.8, 0.3, 0.1, 1.0);
         this.flameMaterial.setShininess(100);
         
-        // Textura para as chamas (se disponível)
         try {
             this.flameTexture = new CGFtexture(this.scene, 'textures/fire.jpg');
             this.flameMaterial.setTexture(this.flameTexture);
@@ -91,24 +101,20 @@ export class MyFire extends CGFobject {
             console.warn('Textura de fogo não encontrada. Usando apenas cor.');
         }
         
-        // Material para a base queimada
         this.baseMaterial = new CGFappearance(this.scene);
         this.baseMaterial.setAmbient(0.4, 0.4, 0.4, 1.0);
         this.baseMaterial.setDiffuse(0.5, 0.5, 0.5, 1.0);
         this.baseMaterial.setSpecular(0.1, 0.1, 0.1, 1.0);
         this.baseMaterial.setShininess(5);
         
-        // Textura para área queimada (se disponível)
         try {
             this.baseTexture = new CGFtexture(this.scene, 'textures/burnt_ground.jpg');
-            // Set burnt texture as the default for baseMaterial
             this.baseMaterial.setTexture(this.baseTexture);
             this.baseMaterial.setTextureWrap('REPEAT', 'REPEAT');
         } catch (e) {
             console.warn('Textura de solo queimado não encontrada. Usando apenas cor.');
         }
         
-        // Material para o fogo apagado (fumaça)
         this.smokeMaterial = new CGFappearance(this.scene);
         this.smokeMaterial.setAmbient(0.7, 0.7, 0.7, 0.6);
         this.smokeMaterial.setDiffuse(0.8, 0.8, 0.8, 0.5);
@@ -146,14 +152,13 @@ export class MyFire extends CGFobject {
      */
     extinguish() {
         this.active = false;
-        this.showSmoke = true; // Start showing smoke
-        this.extinguishedTime = this.lastTime; // Record the time of extinguishing
+        this.showSmoke = true;
+        this.extinguishedTime = this.lastTime; 
         
         for (const flame of this.flames) {
             flame.height *= 0.2;
         }
         
-        console.log("Fogo apagado!");
     }
     
     
@@ -164,7 +169,6 @@ export class MyFire extends CGFobject {
         this.scene.rotate(-Math.PI/2, 1, 0, 0);
         this.scene.scale(this.baseRadius, this.baseRadius, 1);
         
-        // Only draw the base with burnt texture if the fire is extinguished
         if (!this.active && this.baseTexture) {
             this.baseMaterial.setTexture(this.baseTexture);
             this.baseMaterial.apply();
@@ -177,8 +181,7 @@ export class MyFire extends CGFobject {
     drawFlame(flame) {
         this.scene.pushMatrix();
         
-        // Posicionar a chama
-        this.scene.translate(flame.x, 0, flame.z);
+        this.scene.translate(flame.x, flame.y, flame.z);
         this.scene.rotate(flame.rotationY, 0, 1, 0);
         
         const currentFlameHeight = flame.currentHeight || flame.height;
@@ -186,18 +189,15 @@ export class MyFire extends CGFobject {
         const timeFactor = (this.lastTime / 300) + flame.phase;
         const swayMagnitude = 0.3 * flame.width;
 
-        // Get the original vertices from the flameShape prototype
         const originalVerts = this.flameShape.originalVertices;
-        const newVerts = [...originalVerts]; // Create a copy to modify
-
+        const newVerts = [...originalVerts];
         newVerts[6] = originalVerts[6] + Math.sin(timeFactor) * swayMagnitude;
         newVerts[7] = originalVerts[7] + Math.cos(timeFactor * 0.7 + flame.phase / 2) * swayMagnitude * 0.1; 
 
-        // Update the vertices of the flameShape instance just before drawing this flame
         this.flameShape.updateVertices(newVerts);
 
         this.scene.pushMatrix();
-        this.scene.scale(flame.width, currentFlameHeight, 1); // Scale by animated height
+        this.scene.scale(flame.width, currentFlameHeight, 1); 
         this.flameMaterial.apply();
         this.flameShape.display();
         this.scene.popMatrix();
@@ -206,7 +206,6 @@ export class MyFire extends CGFobject {
     }
     
     drawSmoke() {
-        // Configuração para transparência
         this.scene.gl.enable(this.scene.gl.BLEND);
         this.scene.gl.blendFunc(this.scene.gl.SRC_ALPHA, this.scene.gl.ONE_MINUS_SRC_ALPHA);
         

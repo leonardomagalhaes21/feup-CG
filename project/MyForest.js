@@ -47,13 +47,11 @@ export class MyForest extends CGFobject {
                 const x = baseX + offsetX;
                 const z = baseZ + offsetZ;
                 
-                // Random tree parameters
                 const tiltAngle = Math.random() * 15 - 7.5; 
                 const tiltAxis = Math.random() > 0.5 ? 'X' : 'Z';
                 const trunkRadius = 0.3 + Math.random() * 0.4;
-                const treeHeight = 3 + Math.random() * 3;
+                const treeHeight = 7 + Math.random() * 3;
                 
-                // Random green color variations
                 const baseGreen = 0.5 + Math.random() * 0.3;
                 const crownColor = [
                     0.1 + Math.random() * 0.15,
@@ -88,4 +86,6 @@ export class MyForest extends CGFobject {
             this.scene.popMatrix();
         }
     }
+
+    
 }

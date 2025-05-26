@@ -442,7 +442,7 @@ export class MyBuilding extends CGFobject {
     
     isOverHeliport(x, z) {
         const buildingBaseX = -150;
-        const buildingBaseZ = -250;
+        const buildingBaseZ = -280;
 
         const heliportMinX = buildingBaseX - this.centerModuleWidth / 2;
         const heliportMaxX = buildingBaseX + this.centerModuleWidth / 2;

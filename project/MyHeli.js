@@ -32,7 +32,7 @@ export class MyHeli extends CGFobject {
         this.bladeRotation = 0;
         this.bladeSpeed = 0;
         this.maxBladeSpeed = Math.PI * 0.2;
-        this.lastSpeedFactor = 1.0; // Track speed factor changes
+        this.lastSpeedFactor = 1.0; 
         
         // Inclinação
         this.pitchAngle = 0;
@@ -49,10 +49,10 @@ export class MyHeli extends CGFobject {
         this.bucketDeployed = true;
         this.bucketFilled = false;
         this.bucketPosition = [0, -2, 0];
-        this.waterDropHeight = 0; // Para animar a queda da água
+        this.waterDropHeight = 0;
         this.isWaterDropping = false;
         this.waterDropTime = 0;
-        this.waterDropDuration = 2000; // 2 segundos para queda da água
+        this.waterDropDuration = 2000; 
         
         // Referência para objetos da cena para interação
         this.lake = null;
@@ -198,7 +198,7 @@ export class MyHeli extends CGFobject {
             this.bladeSpeed = Math.min(this.bladeSpeed + 0.01, this.maxBladeSpeed);
         } else {
             this.bladeSpeed = Math.max(0, this.bladeSpeed - 0.01);
-            this.y = -16; // Manter a altura do helicóptero no heliporto
+            this.y = -16; 
             this.setShowBucket(false);
         }
         
@@ -274,7 +274,7 @@ export class MyHeli extends CGFobject {
             
             // Animar queda da água - calculando distância até o solo
             // Considerar a altura atual do helicóptero para determinar a altura da coluna de água
-            const groundDistance = Math.abs(this.y); // Distância aproximada até o chão
+            const groundDistance = Math.abs(this.y);
             this.waterDropHeight = progress * groundDistance; 
             this.isWaterDropping = true;
             

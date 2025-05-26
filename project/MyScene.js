@@ -101,7 +101,7 @@ export class MyScene extends CGFscene {
     this.trunkTexture = new CGFtexture(this, 'textures/trunk.jpg');
     this.crownTexture = new CGFtexture(this, 'textures/leaves.jpg');
     
-    this.forest = new MyForest(this, 5, 4, 80, 60, this.trunkTexture, this.crownTexture);
+    this.forest = new MyForest(this, 20, 16, 140, 100, this.trunkTexture, this.crownTexture);
   
     this.heliCabinTexture = new CGFtexture(this, 'textures/heli_body.jpg');
     this.heliTailTexture = new CGFtexture(this, 'textures/heli_tail.jpg');
@@ -116,11 +116,11 @@ export class MyScene extends CGFscene {
         this.heliBucketTexture
     );
     
-    this.helicopter.x = -150; 
-    this.helicopter.y = -12;    
-    this.helicopter.z = -250; 
+    this.helicopter.x = -150;
+    this.helicopter.y = -12;
+    this.helicopter.z = -280; 
     this.helicopter.state = 'landed';
-    this.helicopter.bucketDeployed = true;
+    this.helicopter.bucketDeployed = true; 
     this.helicopter.bladeSpeed = 0;
     
     this.speedFactor = 1.0;
@@ -136,8 +136,8 @@ export class MyScene extends CGFscene {
     this.lake.z = -230;
     
     // Criar fogo na floresta
-    this.fire = new MyFire(this, 15, 8, 20);
-    this.fire.x = -220;
+    this.fire = new MyFire(this, 20, 8, 25);
+    this.fire.x = -100;
     this.fire.y = -29;
     this.fire.z = -160;
     
@@ -145,7 +145,7 @@ export class MyScene extends CGFscene {
     this.helicopter.lake = this.lake;
     this.helicopter.fire = this.fire;
     this.helicopter.fireStation = this.fireStation;
-    this.fireStation.setHelicopter(this.helicopter); // Pass helicopter instance to fireStation
+    this.fireStation.setHelicopter(this.helicopter);
   }
 
   initLights() {
@@ -180,6 +180,7 @@ export class MyScene extends CGFscene {
     this.staticCameraTarget = vec3.clone(this.camera.target);
   }
 
+  
 
   /**
    * Alterna entre modo de câmera estática e câmera que segue o helicóptero
@@ -192,7 +193,6 @@ export class MyScene extends CGFscene {
       // Voltar para câmera estática
       this.cameraMode = 'static';
       
-      // Restaurar posição e alvo originais da câmera
       vec3.copy(this.camera.position, this.staticCameraPosition);
       vec3.copy(this.camera.target, this.staticCameraTarget);
       
@@ -205,18 +205,15 @@ export class MyScene extends CGFscene {
   updateCameraPosition() {
     if (this.cameraMode !== 'follow') return;
 
-    // Calcular nova posição da câmera atrás do helicóptero
     const dx = -Math.sin(this.helicopter.orientation) * this.cameraDistance;
     const dz = -Math.cos(this.helicopter.orientation) * this.cameraDistance;
     
-    // Posição desejada da câmera
     const targetPosition = [
       this.helicopter.x + dx,
       this.helicopter.y + this.cameraHeight,
       this.helicopter.z + dz
     ];
     
-    // Alvo da câmera (posição do helicóptero com ligeira compensação para a altura)
     const targetLookAt = [
       this.helicopter.x,
       this.helicopter.y + this.cameraHeight * 0.3,
@@ -305,12 +302,10 @@ export class MyScene extends CGFscene {
     this.fire.update(t);
     
     this.helicopter.update(t, deltaT);
-    // Update fireStation (MyBuilding instance) with current time and helicopter state
-    if (this.fireStation) { // Ensure fireStation is initialized
+    if (this.fireStation) { 
         this.fireStation.update(t, this.helicopter.state);
     }
     
-    // Atualizar posição da câmera se estiver no modo 'follow'
     if (this.cameraMode === 'follow') {
       this.updateCameraPosition();
     }
@@ -348,10 +343,10 @@ export class MyScene extends CGFscene {
 
     // Draw the ground
     this.pushMatrix();
-    this.translate(-150, -30, -150); // Move the ground to the front of the building
-    this.rotate(-Math.PI / 2, 1, 0, 0); // Rotate to align with the XZ plane
-    this.scale(400, 400, 1); // Scale to 400x400
-    this.grassMaterial.apply(); // Apply grass material
+    this.translate(-150, -30, -150); 
+    this.rotate(-Math.PI / 2, 1, 0, 0); 
+    this.scale(400, 400, 1); 
+    this.grassMaterial.apply(); 
     this.plane.display();
     this.popMatrix();
 
@@ -367,13 +362,13 @@ export class MyScene extends CGFscene {
     this.popMatrix();
     
     this.pushMatrix();
-    this.translate(-150, -30, -250);
+    this.translate(-150, -30, -280); 
     this.fireStation.display();
     this.popMatrix();
 
     // Display forest
     this.pushMatrix();
-    this.translate(-200, -30, -180);
+    this.translate(-160, -30, -180);
     this.forest.display();
     this.popMatrix();
 
