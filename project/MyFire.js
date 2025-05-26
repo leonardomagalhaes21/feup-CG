@@ -1,10 +1,24 @@
-import { CGFobject, CGFappearance, CGFtexture } from '../lib/CGF.js';
+import { CGFobject, CGFappearance, CGFtexture, CGFshader } from '../lib/CGF.js';
 import { MySphere } from './MySphere.js';
 import { MyIrregularPolygon } from './MyIrregularPolygon.js';
 import { MyFlameTriangle } from './MyFlameTriangle.js';
 
 export class MyFire extends CGFobject {
-    constructor(scene, width = 10, height = 5, numFlames = 15) {
+
+    initShaders() {
+        this.flameShader = new CGFshader(this.scene.gl, "shaders/flame.vert", "shaders/flame.frag");
+        this.flameShader.setUniformsValues({ 
+            timeFactor: 0,
+            flamePhase: 0,
+            swayMagnitude: 0.5,
+            frequency: 1.0,
+            colorVariation: 1.0,
+            horizontalFactor: 0.7,
+            verticalFactor: 0.7
+        });
+    }
+
+    constructor(scene, width = 10, height = 5, numFlames = 12) {
         super(scene);
         this.scene = scene;
         this.width = width;
@@ -36,56 +50,86 @@ export class MyFire extends CGFobject {
         this.initFlames();
         
         this.initMaterials();
+        this.initShaders();
+
     }
     
     /**
      * Inicializa as chamas com posições e parâmetros aleatórios
      */
-    /**
- * Inicializa as chamas com posições e parâmetros aleatórios
- */
-initFlames() {
-    for (let i = 0; i < this.numFlames; i++) {
-        const radius = Math.random() * this.baseRadius * 0.9;
-        const angle = Math.random() * Math.PI * 2;
-        const x = Math.cos(angle) * radius;
-        const z = Math.sin(angle) * radius;
-        
-        const heightDistribution = Math.random();
+    initFlames() {
+        for (let i = 0; i < this.numFlames; i++) {
+            const radius = Math.random() * this.baseRadius * 0.9;
+            const angle = Math.random() * Math.PI * 2;
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+            
+            const heightDistribution = Math.random();
 
-        let y = 0;
-        if (heightDistribution < 0.7) {
-            y = 0.5 + Math.random() * 2.5;
-        } else {
-            y = Math.random() * 0.5;
+            let y = 0;
+            if (heightDistribution < 0.7) {
+                y = 0.5 + Math.random() * 2.5;
+            } else {
+                y = Math.random() * 0.5;
+            }
+            
+            // Maior variação na altura e largura iniciais
+            const height = this.height * (0.3 + Math.random() * 0.8);
+            const width = this.width * 0.1 * (0.3 + Math.random() * 0.8);
+            
+            const rotationY = Math.random() * Math.PI * 2;
+            const rotationSpeed = 0.1 + Math.random() * 0.4;
+            
+            const phase = Math.random() * Math.PI * 6; 
+            
+            const frequency = 0.4 + Math.random() * 0.6;
+            
+            const swayMagnitude = 0.2 + Math.random() * 0.6; 
+            
+            const colorVariation = 0.7 + Math.random() * 0.6;
+            
+            let horizontalFactor, verticalFactor;
+            
+            const movementType = Math.random();
+            
+            if (movementType < 0.4) {
+                horizontalFactor = 0.7 + Math.random() * 0.6;
+                verticalFactor = 0.1 + Math.random() * 0.4;
+            } 
+            else if (movementType < 0.8) {
+                horizontalFactor = 0.1 + Math.random() * 0.4;
+                verticalFactor = 0.7 + Math.random() * 0.6;
+            }
+            else {
+                horizontalFactor = 0.3 + Math.random() * 0.6; 
+                verticalFactor = 0.3 + Math.random() * 0.6;    
+            }
+            
+            this.flames.push({
+                x: x,
+                y: y,
+                z: z,
+                height: height,
+                width: width,
+                rotationY: rotationY,
+                rotationSpeed: rotationSpeed,
+                phase: phase,
+                frequency: frequency,
+                swayMagnitude: swayMagnitude,
+                colorVariation: colorVariation,
+                horizontalFactor: horizontalFactor,
+                verticalFactor: verticalFactor,
+                // Propriedades para pulsação aleatória
+                pulseFrequency: 0.5 + Math.random() * 1.0,
+                pulseAmplitude: 0.1 + Math.random() * 0.2
+            });
         }
-        
-        const height = this.height * (0.4 + Math.random() * 0.6);
-        const width = this.width * 0.1 * (0.4 + Math.random() * 0.6);
-        
-        const rotationY = Math.random() * Math.PI * 2;
-        const rotationSpeed = 0.2 + Math.random() * 0.3;
-        
-        const phase = Math.random() * Math.PI * 2;
-        
-        this.flames.push({
-            x: x,
-            y: y,
-            z: z,
-            height: height,
-            width: width,
-            rotationY: rotationY,
-            rotationSpeed: rotationSpeed,
-            phase: phase
-        });
     }
-}
-    
+        
     /**
      * Inicializa materiais e texturas para o fogo
      */
     initMaterials() {
-        // Material para as chamas (laranja avermelhado com emissão)
         this.flameMaterial = new CGFappearance(this.scene);
         this.flameMaterial.setAmbient(0.8, 0.3, 0.1, 1.0);
         this.flameMaterial.setDiffuse(0.9, 0.4, 0.1, 1.0);
@@ -122,25 +166,44 @@ initFlames() {
         this.smokeMaterial.setShininess(5);
     }
     
-    /**
+   /**
      * Atualiza a animação das chamas
      * @param {Number} t - Tempo atual em milissegundos
      */
     update(t) {
-        if (!this.lastTime) {
-            this.lastTime = t;
-            return;
+        this.lastTime = t;
+        
+        this.flameShader.setUniformsValues({
+            timeFactor: t
+        });
+        
+        if (!this.lastUpdate || t - this.lastUpdate > 100) {
+            this.lastUpdate = t;
+            
+            if (this.active) {
+                for (const flame of this.flames) {
+                    flame.rotationY += 0.005;
+                    
+                    flame.currentSwayMagnitude = flame.swayMagnitude * (0.8 + Math.sin(t * 0.0002 + flame.phase) * 0.2);
+                    
+                    if (!flame.originalHeight) {
+                        flame.originalHeight = flame.height;
+                    }
+                    
+                    const heightVariation = 0.9 + Math.sin(t * 0.0006 + flame.phase * 2.0) * 0.1 + Math.random() * 0.05;
+                    flame.height = flame.originalHeight * heightVariation;
+                    
+                    if (!flame.originalWidth) {
+                        flame.originalWidth = flame.width;
+                    }
+                    
+                    const widthVariation = 0.95 + Math.sin(t * 0.0009 + flame.phase * 1.5) * 0.05 + Math.random() * 0.03;
+                    flame.width = flame.originalWidth * widthVariation;
+                }
+            }
         }
         
-        const elapsed = t - this.lastTime;
-        this.lastTime = t;
-
-        if (this.active) {
-            for (const flame of this.flames) {
-                flame.rotationY += flame.rotationSpeed * elapsed / 1000;
-                flame.currentHeight = flame.height * (0.7 + 0.3 * Math.sin(t/1000 + flame.phase));
-            }
-        } else if (this.showSmoke) {
+        if (!this.active && this.showSmoke) {
             if (this.extinguishedTime && (t - this.extinguishedTime > this.smokeTime)) {
                 this.showSmoke = false;
             }
@@ -184,27 +247,23 @@ initFlames() {
         this.scene.translate(flame.x, flame.y, flame.z);
         this.scene.rotate(flame.rotationY, 0, 1, 0);
         
-        const currentFlameHeight = flame.currentHeight || flame.height;
+        const currentSway = flame.currentSwayMagnitude || flame.swayMagnitude;
         
-        const timeFactor = (this.lastTime / 300) + flame.phase;
-        const swayMagnitude = 0.3 * flame.width;
-
-        const originalVerts = this.flameShape.originalVertices;
-        const newVerts = [...originalVerts];
-        newVerts[6] = originalVerts[6] + Math.sin(timeFactor) * swayMagnitude;
-        newVerts[7] = originalVerts[7] + Math.cos(timeFactor * 0.7 + flame.phase / 2) * swayMagnitude * 0.1; 
-
-        this.flameShape.updateVertices(newVerts);
-
-        this.scene.pushMatrix();
-        this.scene.scale(flame.width, currentFlameHeight, 1); 
-        this.flameMaterial.apply();
+        this.flameShader.setUniformsValues({
+            flamePhase: flame.phase,
+            swayMagnitude: currentSway * 1.5,
+            frequency: flame.frequency,
+            colorVariation: flame.colorVariation,
+            horizontalFactor: flame.horizontalFactor,
+            verticalFactor: flame.verticalFactor
+        });
+        
+        this.scene.scale(flame.width, flame.height, 1);
+        
         this.flameShape.display();
-        this.scene.popMatrix();
         
         this.scene.popMatrix();
     }
-    
     drawSmoke() {
         this.scene.gl.enable(this.scene.gl.BLEND);
         this.scene.gl.blendFunc(this.scene.gl.SRC_ALPHA, this.scene.gl.ONE_MINUS_SRC_ALPHA);
@@ -241,16 +300,21 @@ initFlames() {
             this.scene.gl.blendFunc(this.scene.gl.SRC_ALPHA, this.scene.gl.ONE_MINUS_SRC_ALPHA);
             
             this.flameMaterial.apply();
+            this.scene.setActiveShader(this.flameShader);
+            
+            // Configurar o tempo atual no shader 
+            this.flameShader.setUniformsValues({
+                timeFactor: this.lastTime
+            });
             
             for (const flame of this.flames) {
                 this.drawFlame(flame);
             }
             
+            this.scene.setActiveShader(this.scene.defaultShader);
             this.scene.gl.disable(this.scene.gl.BLEND);
-        } else {
-            if (this.showSmoke) {
-                this.drawSmoke();
-            }
+        } else if (this.showSmoke) {
+            this.drawSmoke();
         }
     }
 }

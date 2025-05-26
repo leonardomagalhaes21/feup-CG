@@ -425,8 +425,8 @@ export class MyHeli extends CGFobject {
         
     reset() {
         this.x = -150;  
-        this.y = -16;
-        this.z = -250;  
+        this.y = -12;
+        this.z = -280;  
         this.orientation = 0;
         this.velocity = [0, 0, 0];
         this.state = 'landed';
