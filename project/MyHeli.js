@@ -208,10 +208,12 @@ export class MyHeli extends CGFobject {
             this.z += this.velocity[2] * deltaT / 50;
             
             // Ajustar inclinação com base na velocidade
-            const speed = Math.sqrt(this.velocity[0] * this.velocity[0] + this.velocity[2] * this.velocity[2]);
+            const forwardX = Math.sin(this.orientation);
+            const forwardZ = Math.cos(this.orientation);
+            const signedSpeed = this.velocity[0] * forwardX + this.velocity[2] * forwardZ;
             const speedFactor = this.scene.speedFactor || 1.0;
             const maxSpeed = 0.3 * speedFactor;
-            const targetPitch = -this.maxPitchAngle * (speed / maxSpeed); 
+            const targetPitch = this.maxPitchAngle * (signedSpeed / maxSpeed); 
             this.pitchAngle = 0.9 * this.pitchAngle + 0.1 * targetPitch;
             
    
@@ -314,9 +316,14 @@ export class MyHeli extends CGFobject {
             this.orientation += v;
             this.orientation = this.orientation % (2 * Math.PI);
     
-            const speed = Math.sqrt(this.velocity[0] * this.velocity[0] + this.velocity[2] * this.velocity[2]);
-            this.velocity[0] = Math.sin(this.orientation) * speed;
-            this.velocity[2] = Math.cos(this.orientation) * speed;
+            // Calculate current signed speed to maintain direction
+            const forwardX = Math.sin(this.orientation - v);
+            const forwardZ = Math.cos(this.orientation - v);
+            const signedSpeed = this.velocity[0] * forwardX + this.velocity[2] * forwardZ;
+            
+            // Apply new direction with same signed speed
+            this.velocity[0] = Math.sin(this.orientation) * signedSpeed;
+            this.velocity[2] = Math.cos(this.orientation) * signedSpeed;
     
             // Activate red light when turning left, green light when turning right
             if (v < 0) {
@@ -336,23 +343,22 @@ export class MyHeli extends CGFobject {
     
     accelerate(v) {
         if (this.state === 'flying') {
-            let currentSpeed = Math.sqrt(this.velocity[0] * this.velocity[0] + this.velocity[2] * this.velocity[2]);
-            let newSpeed = currentSpeed + v;
+            // Calculate current signed speed in the forward direction
+            const forwardX = Math.sin(this.orientation);
+            const forwardZ = Math.cos(this.orientation);
+            const currentSignedSpeed = this.velocity[0] * forwardX + this.velocity[2] * forwardZ;
+            
+            // Apply acceleration
+            let newSignedSpeed = currentSignedSpeed + v;
             
             // Get speedFactor from scene and apply it to maxSpeed
             const speedFactor = this.scene.speedFactor || 1.0;
             const maxSpeed = 0.3 * speedFactor;
-            newSpeed = Math.max(-maxSpeed, Math.min(maxSpeed, newSpeed));
+            newSignedSpeed = Math.max(-maxSpeed, Math.min(maxSpeed, newSignedSpeed));
             
-            if (currentSpeed === 0 && newSpeed !== 0) {
-                this.velocity[0] = Math.sin(this.orientation) * newSpeed;
-                this.velocity[2] = Math.cos(this.orientation) * newSpeed;
-            } 
-            else if (currentSpeed !== 0) {
-                const factor = newSpeed / currentSpeed;
-                this.velocity[0] *= factor;
-                this.velocity[2] *= factor;
-            }
+            // Set new velocity based on the signed speed
+            this.velocity[0] = Math.sin(this.orientation) * newSignedSpeed;
+            this.velocity[2] = Math.cos(this.orientation) * newSignedSpeed;
         }
     }
 
