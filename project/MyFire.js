@@ -54,78 +54,72 @@ export class MyFire extends CGFobject {
 
     }
     
-    /**
-     * Inicializa as chamas com posições e parâmetros aleatórios
-     */
-    initFlames() {
-        for (let i = 0; i < this.numFlames; i++) {
-            const radius = Math.random() * this.baseRadius * 0.9;
-            const angle = Math.random() * Math.PI * 2;
-            const x = Math.cos(angle) * radius;
-            const z = Math.sin(angle) * radius;
-            
-            const heightDistribution = Math.random();
-
-            let y = 0;
-            if (heightDistribution < 0.7) {
-                y = 0.5 + Math.random() * 2.5;
-            } else {
-                y = Math.random() * 0.5;
-            }
-            
-            // Maior variação na altura e largura iniciais
-            const height = this.height * (0.3 + Math.random() * 0.8);
-            const width = this.width * 0.1 * (0.3 + Math.random() * 0.8);
-            
-            const rotationY = Math.random() * Math.PI * 2;
-            const rotationSpeed = 0.1 + Math.random() * 0.4;
-            
-            const phase = Math.random() * Math.PI * 6; 
-            
-            const frequency = 0.4 + Math.random() * 0.6;
-            
-            const swayMagnitude = 0.2 + Math.random() * 0.6; 
-            
-            const colorVariation = 0.7 + Math.random() * 0.6;
-            
-            let horizontalFactor, verticalFactor;
-            
-            const movementType = Math.random();
-            
-            if (movementType < 0.4) {
-                horizontalFactor = 0.7 + Math.random() * 0.6;
-                verticalFactor = 0.1 + Math.random() * 0.4;
-            } 
-            else if (movementType < 0.8) {
-                horizontalFactor = 0.1 + Math.random() * 0.4;
-                verticalFactor = 0.7 + Math.random() * 0.6;
-            }
-            else {
-                horizontalFactor = 0.3 + Math.random() * 0.6; 
-                verticalFactor = 0.3 + Math.random() * 0.6;    
-            }
-            
-            this.flames.push({
-                x: x,
-                y: y,
-                z: z,
-                height: height,
-                width: width,
-                rotationY: rotationY,
-                rotationSpeed: rotationSpeed,
-                phase: phase,
-                frequency: frequency,
-                swayMagnitude: swayMagnitude,
-                colorVariation: colorVariation,
-                horizontalFactor: horizontalFactor,
-                verticalFactor: verticalFactor,
-                // Propriedades para pulsação aleatória
-                pulseFrequency: 0.5 + Math.random() * 1.0,
-                pulseAmplitude: 0.1 + Math.random() * 0.2
-            });
-        }
-    }
+   /**
+ * Inicializa as chamas com posições e parâmetros aleatórios
+ */
+initFlames() {
+    for (let i = 0; i < this.numFlames; i++) {
+        const radius = Math.random() * this.baseRadius * 0.9;
+        const angle = Math.random() * Math.PI * 2;
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius;
         
+        // MODIFICADO: Todas as chamas agora começam no nível do chão
+        // Pequena variação na altura para evitar z-fighting
+        const y = 0.05 + Math.random() * 0.15; 
+        
+        // Maior variação na altura e largura iniciais
+        const height = this.height * (0.3 + Math.random() * 0.8);
+        const width = this.width * 0.1 * (0.3 + Math.random() * 0.8);
+        
+        const rotationY = Math.random() * Math.PI * 2;
+        const rotationSpeed = 0.1 + Math.random() * 0.4;
+        
+        const phase = Math.random() * Math.PI * 6; 
+        
+        const frequency = 0.4 + Math.random() * 0.6;
+        
+        const swayMagnitude = 0.2 + Math.random() * 0.6; 
+        
+        const colorVariation = 0.7 + Math.random() * 0.6;
+        
+        let horizontalFactor, verticalFactor;
+        
+        const movementType = Math.random();
+        
+        if (movementType < 0.4) {
+            horizontalFactor = 0.7 + Math.random() * 0.6;
+            verticalFactor = 0.1 + Math.random() * 0.4;
+        } 
+        else if (movementType < 0.8) {
+            horizontalFactor = 0.1 + Math.random() * 0.4;
+            verticalFactor = 0.7 + Math.random() * 0.6;
+        }
+        else {
+            horizontalFactor = 0.3 + Math.random() * 0.6; 
+            verticalFactor = 0.3 + Math.random() * 0.6;    
+        }
+        
+        this.flames.push({
+            x: x,
+            y: y,
+            z: z,
+            height: height,
+            width: width,
+            rotationY: rotationY,
+            rotationSpeed: rotationSpeed,
+            phase: phase,
+            frequency: frequency,
+            swayMagnitude: swayMagnitude,
+            colorVariation: colorVariation,
+            horizontalFactor: horizontalFactor,
+            verticalFactor: verticalFactor,
+            // Propriedades para pulsação aleatória
+            pulseFrequency: 0.5 + Math.random() * 1.0,
+            pulseAmplitude: 0.1 + Math.random() * 0.2
+        });
+    }
+}
     /**
      * Inicializa materiais e texturas para o fogo
      */

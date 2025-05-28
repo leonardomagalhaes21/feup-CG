@@ -136,9 +136,9 @@ export class MyScene extends CGFscene {
     this.lake.z = -230;
     
     // Criar fogo na floresta
-    this.fire = new MyFire(this, 20, 8, 12);
+    this.fire = new MyFire(this, 20, 6, 12);
     this.fire.x = -100;
-    this.fire.y = -29;
+    this.fire.y = -30;
     this.fire.z = -160;
     
     // Adicionar referências ao helicóptero
