@@ -518,12 +518,28 @@ export class MyHeli extends CGFobject {
         this.scene.popMatrix();
         
         // Estabilizador vertical da cauda
+        const xOffsetStabilizerDisk = 0.2;
+        const diskRadius = 0.8;
+        const diskThickness = 0.1; 
+        const yPosDisk = 0.6;
+        const zPosStabilizer = -7;
+
+        // Disco 1 do estabilizador
         this.scene.pushMatrix();
-        this.scene.translate(0, 1, -6); 
-        this.scene.rotate(Math.PI/2, 0, 1, 0);
-        this.scene.scale(1, 1, 0.1);
+        this.scene.translate(xOffsetStabilizerDisk, yPosDisk, zPosStabilizer);
+        this.scene.rotate(-Math.PI / 2, 0, 0, 1);
+        this.scene.scale(diskRadius, diskThickness, diskRadius);
         this.tailMaterial.apply();
-        this.cabin.display(); 
+        this.cabin.display();
+        this.scene.popMatrix();
+
+        // Disco 2 do estabilizador
+        this.scene.pushMatrix();
+        this.scene.translate(-xOffsetStabilizerDisk, yPosDisk, zPosStabilizer);
+        this.scene.rotate(-Math.PI / 2, 0, 0, 1);
+        this.scene.scale(diskRadius, diskThickness, diskRadius);
+        this.tailMaterial.apply();
+        this.cabin.display();
         this.scene.popMatrix();
         
         // Hélice principal
@@ -573,12 +589,15 @@ export class MyHeli extends CGFobject {
         
         // Hélice da cauda 
         this.scene.pushMatrix();
-        this.scene.translate(0, 1, -7);
+        this.scene.translate(-0.05, 1, -7);
+
+        this.scene.rotate(Math.PI / 2, 0, 1, 0); 
+
         this.scene.rotate(this.bladeRotation * 1.5, 0, 0, 1);
         
         // Pá 1
         this.scene.pushMatrix();
-        this.scene.scale(1, 0.1, 0.1);
+        this.scene.scale(0.9, 0.1, 0.1);
         this.bladeMaterial.apply();
         this.tailBlade.display();
         this.scene.popMatrix();
@@ -586,7 +605,7 @@ export class MyHeli extends CGFobject {
         // Pá 2 (oposta)
         this.scene.pushMatrix();
         this.scene.rotate(Math.PI, 0, 0, 1);
-        this.scene.scale(1, 0.1, 0.1);
+        this.scene.scale(0.9, 0.1, 0.1);
         this.bladeMaterial.apply();
         this.tailBlade.display();
         this.scene.popMatrix();
@@ -594,7 +613,7 @@ export class MyHeli extends CGFobject {
         // Pá 3 (perpendicular)
         this.scene.pushMatrix();
         this.scene.rotate(Math.PI/2, 0, 0, 1);
-        this.scene.scale(1, 0.1, 0.1);
+        this.scene.scale(0.9, 0.1, 0.1);
         this.bladeMaterial.apply();
         this.tailBlade.display();
         this.scene.popMatrix();
@@ -602,15 +621,16 @@ export class MyHeli extends CGFobject {
         // Pá 4 (oposta à Pá 3)
         this.scene.pushMatrix();
         this.scene.rotate(-Math.PI/2, 0, 0, 1);
-        this.scene.scale(1, 0.1, 0.1);
+        this.scene.scale(0.9, 0.1, 0.1);
         this.bladeMaterial.apply();
         this.tailBlade.display();
         this.scene.popMatrix();
         
         // Centro da hélice da cauda
         this.scene.pushMatrix();
-        this.scene.scale(0.3, 0.3, 0.3);
-        this.cabinMaterial.apply();
+        this.scene.translate(0, 0, 0.05);
+        this.scene.scale(0.2, 0.2, 0.2);
+        this.tailMaterial.apply();
         this.cabin.display();
         this.scene.popMatrix();
         
