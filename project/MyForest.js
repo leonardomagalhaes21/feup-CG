@@ -52,12 +52,12 @@ export class MyForest extends CGFobject {
                 const trunkRadius = 0.3 + Math.random() * 0.4;
                 const treeHeight = 7 + Math.random() * 3;
                 
-                const baseGreen = 0.5 + Math.random() * 0.3;
-                const crownColor = [
-                    0.1 + Math.random() * 0.15,
-                    baseGreen,
-                    0.1 + Math.random() * 0.15
-                ];
+
+                const r_component = 0.05 + Math.random() * 0.20;  // R: 0.05 to 0.25
+                const g_component = 0.40 + Math.random() * 0.50;  // G: 0.40 to 0.90
+                const b_component = 0.05 + Math.random() * 0.20;  // B: 0.05 to 0.25
+
+                const crownColor = [r_component, g_component, b_component];
                 
                 const tree = new MyTree(
                     this.scene, 

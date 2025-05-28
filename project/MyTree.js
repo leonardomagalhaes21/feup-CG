@@ -39,7 +39,7 @@ export class MyTree extends CGFobject {
     const layerHeightForCalc = this.crownHeight / this.numLayers;
     const pyramidHeightForCalc = layerHeightForCalc * 1.5;
     const yBaseOfLastPyramid = this.trunkHeight + ((this.numLayers - 1) * layerHeightForCalc * 0.6);
-    this.actualTreeTopY = yBaseOfLastPyramid + pyramidHeightForCalc - 0.5;
+    this.actualTreeTopY = yBaseOfLastPyramid + pyramidHeightForCalc - 1;
 
     // Store the calculated apex offsets for the main cone (entire tree height)
     this.coneApexOffsetX = 0;
