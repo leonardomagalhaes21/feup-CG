@@ -3,6 +3,7 @@ precision highp float;
 #endif
 
 varying vec2 vTextureCoord;
+varying float vHeight;
 
 uniform sampler2D uSampler;
 uniform float timeFactor;
@@ -11,18 +12,14 @@ uniform float colorVariation;
 void main() {
     vec4 texColor = texture2D(uSampler, vTextureCoord);
     
-    float flicker = 0.9 + sin(timeFactor * 0.003) * 0.1 * colorVariation;
+    float flicker = 0.95 + sin(timeFactor * 0.003 + vTextureCoord.y * 2.0) * 0.05 * colorVariation;
     
-    vec3 enhancedColor = texColor.rgb;
-    enhancedColor.r *= 1.0 + 0.1 * flicker;     
-    enhancedColor.g *= 1.0 + 0.05 * flicker;    
+    vec3 finalColor = texColor.rgb * flicker;
     
-    // Combinar a cor original com um leve brilho
-    float heightFactor = vTextureCoord.y * 0.2;
-    vec3 highlight = vec3(1.0, 0.9, 0.6) * heightFactor * flicker;
-    
-    // 80% cor original, 20% realce
-    vec3 finalColor = mix(enhancedColor, enhancedColor + highlight, 0.2);
+    if (vTextureCoord.y > 0.7) {
+        float glow = (vTextureCoord.y - 0.7) / 0.3 * 0.15 * sin(timeFactor * 0.002);
+        finalColor += vec3(glow, glow * 0.7, glow * 0.3);
+    }
     
     gl_FragColor = vec4(finalColor, texColor.a);
 }
