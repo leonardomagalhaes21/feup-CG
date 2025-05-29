@@ -253,11 +253,11 @@ export class MyHeli extends CGFobject {
             this.velocity = [0, 0, 0];
             
             // Descer lentamente até o nível da água
-            if (this.y > -25) {
+            if (this.y > -25.5) {
                 this.y -= 0.1 * deltaT / 50;
             } else {
                 // Chegou próximo à água
-                this.y = -25; 
+                this.y = -25.5; 
                 this.bucketFilled = true;
             }
         }
@@ -593,7 +593,7 @@ export class MyHeli extends CGFobject {
 
         this.scene.rotate(Math.PI / 2, 0, 1, 0); 
 
-        this.scene.rotate(this.bladeRotation * 1.5, 0, 0, 1);
+        this.scene.rotate(this.bladeRotation, 0, 0, 1);
         
         // Pá 1
         this.scene.pushMatrix();

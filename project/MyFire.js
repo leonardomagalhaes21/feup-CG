@@ -16,7 +16,7 @@ export class MyFire extends CGFobject {
             horizontalFactor: 0.7,
             verticalFactor: 0.7,
             windDirection: 1.0,  
-            windStrength: 0.6
+            windStrength: 10.0
         });
     }
 
@@ -50,9 +50,9 @@ export class MyFire extends CGFobject {
         
         // Parâmetros do vento
         this.windDirection = 1.0;
-        this.windStrength = 0.6;
+        this.windStrength = 10.0;
         this.windCycleTime = 5000;  
-        this.windVariation = 0.2;    
+        this.windVariation = 0.4;    
         
         this.initFlames();
         this.initMaterials();
@@ -66,8 +66,8 @@ export class MyFire extends CGFobject {
     const consistentWindStrength = 0.5 + Math.random() * 0.2; 
     
     
-    const minHeightFactor = 0.7;  
-    const maxHeightFactor = 1.1;  
+    const minHeightFactor = 0.8;  
+    const maxHeightFactor = 1.2;  
     const heightRange = maxHeightFactor - minHeightFactor;
     
     for (let i = 0; i < this.numFlames; i++) {
@@ -81,8 +81,8 @@ export class MyFire extends CGFobject {
         const height = this.height * (minHeightFactor + Math.random() * heightRange);
         
         // Larguras também mais uniformes
-        const minWidthFactor = 0.4; 
-        const maxWidthFactor = 0.9; 
+        const minWidthFactor = 1.3; 
+        const maxWidthFactor = 2.0; 
         const width = this.width * 0.1 * (minWidthFactor + Math.random() * (maxWidthFactor - minWidthFactor));
         
         // Resto do código permanece igual
@@ -365,8 +365,9 @@ export class MyFire extends CGFobject {
      * Renderiza o fogo (chamas ou fumaça, dependendo do estado)
      */
     display() {
-        // Deixei o código da base comentado conforme solicitado
-        // this.drawBase();
+        if (!this.active) {
+            this.drawBase();
+        }
         
         if (this.active) {
             this.scene.gl.enable(this.scene.gl.BLEND);
