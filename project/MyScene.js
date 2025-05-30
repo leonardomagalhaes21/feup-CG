@@ -172,8 +172,8 @@ export class MyScene extends CGFscene {
       0.8,
       0.1,
       1000,
-      vec3.fromValues(-150, -25, -200),
-      vec3.fromValues(-150, -25, -250)
+      vec3.fromValues(-125, 0, -200),
+      vec3.fromValues(-175, -25, -250)
     );
     
     this.staticCameraPosition = vec3.clone(this.camera.position);
