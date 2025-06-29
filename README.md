@@ -13,7 +13,7 @@ This project implements a 3D helicopter simulation using WebGL and the CGF frame
 ### Key Features
 - Interactive helicopter control with realistic physics
 - Water collection and fire extinguishing mechanics
-- 3D terrain with lakes, forests, and buildings
+- 3D terrain with a lake, a forest, and a building
 - Dynamic lighting and texturing
 - Custom geometric primitives (oblique cones, irregular polygons)
 - Shader effects for flames and heliport animations
