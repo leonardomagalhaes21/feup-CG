@@ -18,7 +18,7 @@ This project implements a 3D helicopter simulation using WebGL and the CGF frame
 - Custom geometric primitives (oblique cones, irregular polygons)
 - Shader effects for flames and heliport animations
 
-![Project Screenshot](project-t12g09-6.png)
+![Project Screenshot](project/screenshots/project-t12g09-6.png)
 
 For the complete implementation, see the [project code](proj/).
 
